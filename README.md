@@ -1,6 +1,6 @@
 ## Overview
 
-The UTC2 Admin Ecommerce System is a .NET Core-based application designed to manage and administer an ecommerce platform. This system provides functionalities for managing products, orders, customers, and other administrative tasks.
+The Admin Ecommerce System Management is a .NET Core-based application designed to manage and administer an ecommerce platform. This system provides functionalities for managing products, orders, customers, and other administrative tasks.
 
 ## Features
 
