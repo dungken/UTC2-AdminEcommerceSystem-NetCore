@@ -53,7 +53,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Contact
 
-For any inquiries or support, please contact [dungken.work@example.com](mailto:dungken.work@example.com).
+For any inquiries or support, please contact [dungken.work@gmail.com](mailto:dungken.work@gmail.com).
 
 ### User Experience and Interface (UX-UI)
 
