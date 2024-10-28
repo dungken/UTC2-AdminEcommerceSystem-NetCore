@@ -1,22 +1,40 @@
+using api.Data;
+using api.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using MyApp.Data; // Make sure to include the correct namespace
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddDbContext<MyDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// Add authorization services
-builder.Services.AddAuthorization();
-
-builder.Services.AddControllers(); // Ensure you have this if you're using controllers
-
-// Add Swagger services
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Other service configurations
+// Register the ApplicationDBContext with the dependency injection container
+builder.Services.AddDbContext<ApplicationDBContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddIdentity<AppUser, IdentityRole>()
+       .AddEntityFrameworkStores<ApplicationDBContext>()
+       .AddDefaultTokenProviders();
+
+// Cấu hình các tùy chọn khác cho Identity
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequiredLength = 6;
+    options.Password.RequireNonAlphanumeric = false;
+
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+
+    options.User.RequireUniqueEmail = true;
+});
+
+
+
 var app = builder.Build();
 
 // Enable middleware to serve generated Swagger as a JSON endpoint
@@ -28,14 +46,6 @@ app.UseSwaggerUI(c =>
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
     c.RoutePrefix = string.Empty; // Set Swagger UI at the app's root
 });
-
-
-// Check database connection at startup
-using (var serviceScope = app.Services.CreateScope())
-{
-    var context = serviceScope.ServiceProvider.GetRequiredService<MyDbContext>();
-    context.Database.EnsureCreated();
-}
 
 if (app.Environment.IsDevelopment())
 {
