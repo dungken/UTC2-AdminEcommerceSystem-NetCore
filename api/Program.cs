@@ -139,6 +139,9 @@ builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddAutoMapper(typeof(RoleProfile));
 
 
+// Add configuration to read environment variables
+builder.Configuration.AddEnvironmentVariables();
+
 var app = builder.Build();
 
 // Ensure roles are created
