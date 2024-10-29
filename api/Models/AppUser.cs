@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 
 namespace api.Models
@@ -10,5 +6,6 @@ namespace api.Models
     {
         public string? FullName { get; set; }
         public DateTime DateOfBirth { get; set; }
+        public string? TwoFactorSecret { get; set; }
     }
 }

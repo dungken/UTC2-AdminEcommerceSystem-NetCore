@@ -1,5 +1,4 @@
 using api.Models;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +6,6 @@ namespace api.Data
 {
     public class ApplicationDBContext : IdentityDbContext<AppUser, AppRole, string>
     {
-        // Define DbSet
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<Permission> Permissions { get; set; }
 
@@ -19,7 +17,7 @@ namespace api.Data
         {
             base.OnModelCreating(builder);
 
-            // Remove the AspNet prefix from the tables
+            // Rename ASPNet tables
             foreach (var entityType in builder.Model.GetEntityTypes())
             {
                 var tableName = entityType.GetTableName();
@@ -30,6 +28,7 @@ namespace api.Data
             }
 
             // Configure the many-to-many relationship between Role and Permission
+
             builder.Entity<RolePermission>()
                 .HasKey(rp => new { rp.RoleId, rp.PermissionId });
 
@@ -37,13 +36,13 @@ namespace api.Data
                 .HasOne(rp => rp.Role)
                 .WithMany(r => r.RolePermissions)
                 .HasForeignKey(rp => rp.RoleId)
-                .IsRequired();
+                .OnDelete(DeleteBehavior.Cascade);
 
             builder.Entity<RolePermission>()
                 .HasOne(rp => rp.Permission)
                 .WithMany(p => p.RolePermissions)
                 .HasForeignKey(rp => rp.PermissionId)
-                .IsRequired();
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
