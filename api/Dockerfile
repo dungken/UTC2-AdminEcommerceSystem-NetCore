@@ -1,26 +1,23 @@
-# Stage 1: Build the application
+# Sử dụng hình ảnh .NET SDK để build ứng dụng
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 
-# Copy project files and restore dependencies
-COPY *.csproj .
+# Copy các file dự án vào container
+COPY . .
+
+# Restore các dependency của ứng dụng
 RUN dotnet restore
 
-# Copy the rest of the application files and build the app
-COPY . .
-RUN dotnet publish -c Release -o /app/out
+# Build ứng dụng và xuất kết quả ra thư mục 'out'
+RUN dotnet publish -c Release -o out
 
-# Stage 2: Run the application
+# Tạo hình ảnh nhỏ hơn bằng cách dùng runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
-COPY --from=build /app/out .
+COPY --from=build /app/out ./
 
-# Set environment variables for SQL Server connection
-ENV ASPNETCORE_URLS=http://+:80
-ENV ConnectionStrings__DefaultConnection="Server=LAPTOP-5E9E2LGL\SQLEXPRESS;Database=MyDatabase;User=sa;Password=Password123;"
-
-# Expose port 80
+# Expose cổng để container có thể được truy cập từ bên ngoài
 EXPOSE 80
 
-# Run the application
+# Chạy ứng dụng khi container khởi động
 ENTRYPOINT ["dotnet", "api.dll"]
