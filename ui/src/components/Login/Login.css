@@ -1,0 +1,32 @@
+/* Login.css */
+.container-xxl {
+   /* background: linear-gradient(135deg, #6e8efb, #a777e3); */
+   padding: 20px;
+   border-radius: 10px;
+}
+
+.card {
+   border-radius: 10px;
+}
+
+.btn-primary {
+   background-color: #6e8efb;
+   border-color: #6e8efb;
+}
+
+.btn-primary:hover {
+   background-color: #5a7de0;
+   border-color: #5a7de0;
+}
+
+.app-brand-link {
+   text-decoration: none;
+}
+
+.app-brand-text {
+   color: #6e8efb;
+}
+
+.app-brand-text:hover {
+   color: #5a7de0;
+}
