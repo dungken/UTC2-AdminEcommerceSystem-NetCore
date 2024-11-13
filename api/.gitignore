@@ -56,6 +56,8 @@ $RECYCLE.BIN/
 # VS Code directories
 .vscode/
 .history/
+obj/
+bin/
 
 # Rider directories
 .idea/
@@ -68,3 +70,5 @@ $RECYCLE.BIN/
 # Temporary files
 *.tmp
 *.temp
+
+.appsettings.json
