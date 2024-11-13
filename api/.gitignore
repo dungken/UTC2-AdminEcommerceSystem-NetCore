@@ -56,8 +56,7 @@ $RECYCLE.BIN/
 # VS Code directories
 .vscode/
 .history/
-obj/
-bin/
+
 
 # Rider directories
 .idea/
@@ -72,3 +71,5 @@ bin/
 *.temp
 
 .appsettings.json
+api/bin/
+api/obj/

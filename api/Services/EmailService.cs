@@ -1,58 +1,83 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Mail;
-using api.Interfaces;
+using System.Threading.Tasks;
+using api.Utils;
+using ZXing.OneD;
 
 namespace api.Services
 {
     public class EmailService : IEmailService
     {
-        private readonly IConfiguration _config;
+        private readonly IConfiguration _configuration;
+        private readonly IVerificationCodeService _verificationCode;
 
-        public EmailService(IConfiguration config)
+        public EmailService(IConfiguration configuration, IVerificationCodeService verificationCode)
         {
-            _config = config;
+            _configuration = configuration;
+            _verificationCode = verificationCode;
         }
 
-        public async Task SendEmailAsync(string email, string subject, string message)
+        public async Task SendEmailAsync(string toEmail, string subject, string body)
         {
-            var smtpClient = new SmtpClient(_config["Email:Smtp:Host"])
+            var smtpClient = new SmtpClient(_configuration["Email:SmtpHost"])
             {
-                Port = int.Parse(_config["Email:Smtp:Port"]),
-                Credentials = new NetworkCredential(_config["Email:Smtp:Username"], _config["Email:Smtp:Password"]),
-                EnableSsl = bool.Parse(_config["Email:Smtp:EnableSsl"])
+                Port = int.Parse(_configuration["Email:SmtpPort"]),
+                Credentials = new NetworkCredential(_configuration["Email:Username"], _configuration["Email:Password"]),
+                EnableSsl = true,
             };
 
             var mailMessage = new MailMessage
             {
-                From = new MailAddress(_config["Email:From"]),
+                From = new MailAddress(_configuration["Email:From"]),
+                Subject = subject,
+                Body = body,
+                IsBodyHtml = true,
+            };
+            mailMessage.To.Add(toEmail);
+
+            await smtpClient.SendMailAsync(mailMessage);
+        }
+
+        public async Task SendEmailAsync(string toEmail, string subject, string message, byte[] attachment = null)
+        {
+            var smtpClient = new SmtpClient(_configuration["Email:SmtpHost"])
+            {
+                Port = int.Parse(_configuration["Email:SmtpPort"]),
+                Credentials = new NetworkCredential(_configuration["Email:Username"], _configuration["Email:Password"]),
+                EnableSsl = true,
+            };
+
+            var mailMessage = new MailMessage
+            {
+                From = new MailAddress(_configuration["Email:From"]),
                 Subject = subject,
                 Body = message,
-                IsBodyHtml = true
+                IsBodyHtml = true,
             };
-            mailMessage.To.Add(email);
+            mailMessage.To.Add(toEmail);
+
+            if (attachment != null)
+            {
+                var attachmentStream = new MemoryStream(attachment);
+                var mailAttachment = new Attachment(attachmentStream, "qrcode.png", "image/png");
+                mailMessage.Attachments.Add(mailAttachment);
+            }
 
             await smtpClient.SendMailAsync(mailMessage);
         }
 
-        public async Task SendPasswordResetEmail(string email, string callbackUrl)
+
+        public async Task SendVerificationCodeEmailAsync(string toEmail, string code)
         {
-            var smtpClient = new SmtpClient(_config["Email:Smtp:Host"])
-            {
-                Port = int.Parse(_config["Email:Smtp:Port"]),
-                Credentials = new NetworkCredential(_config["Email:Smtp:Username"], _config["Email:Smtp:Password"]),
-                EnableSsl = bool.Parse(_config["Email:Smtp:EnableSsl"])
-            };
+            string subject = "Your Verification Code";
+            string body = $"<p>Your verification code is: <strong>{code}</strong></p>" +
+                          "<p>Please enter this code to complete your verification process.</p>";
+            Console.WriteLine("Content email is: " + body);
 
-            var mailMessage = new MailMessage
-            {
-                From = new MailAddress(_config["Email:From"]),
-                Subject = "Reset Password",
-                Body = $"Please reset your password by clicking <a href='{callbackUrl}'>here</a>.",
-                IsBodyHtml = true
-            };
-            mailMessage.To.Add(email);
-
-            await smtpClient.SendMailAsync(mailMessage);
+            await SendEmailAsync(toEmail, subject, body);
         }
 
     }

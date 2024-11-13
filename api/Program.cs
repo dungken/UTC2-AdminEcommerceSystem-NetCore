@@ -1,189 +1,169 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
+using System.Text;
+using api.Auth;
 using api.Data;
-using api.Interfaces;
-using api.MappingProfiles;
 using api.Models;
-using api.Repository;
+using api.Profiles;
 using api.Services;
+using CloudinaryDotNet;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-builder.Services.AddSwaggerGen(option =>
-{
-    option.SwaggerDoc("v1", new OpenApiInfo { Title = "Demo API", Version = "v1" });
-    option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        In = ParameterLocation.Header,
-        Description = "Please enter a valid token",
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        BearerFormat = "JWT",
-        Scheme = "Bearer"
-    });
-    option.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type=ReferenceType.SecurityScheme,
-                    Id="Bearer"
-                }
-            },
-            new string[]{}
-        }
-    });
-});
+// Configure Entity Framework and Identity
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddControllers().AddNewtonsoftJson(options =>
-{
-    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
-});
+builder.Services.AddIdentity<User, Role>()
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();  // Ensures RoleManager is available for DI
 
 
-// Register the ApplicationDBContext with the dependency injection container
-builder.Services.AddDbContext<ApplicationDBContext>(options =>
-{
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
-});
+// Configure JWT settings
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secretKey = jwtSettings["Secret"] ?? throw new ArgumentNullException("Secret key not found in configuration");
 
-
-// Add Identity services
-builder.Services.AddIdentity<AppUser, AppRole>(options =>
-{
-    options.Password.RequireDigit = true;
-    options.Password.RequireLowercase = true;
-    options.Password.RequireUppercase = true;
-    options.Password.RequireNonAlphanumeric = true;
-    options.Password.RequiredLength = 12;
-})
-.AddEntityFrameworkStores<ApplicationDBContext>()
-.AddDefaultTokenProviders();
-
-// Configure authentication
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme =
-    options.DefaultChallengeScheme =
-    options.DefaultForbidScheme =
-    options.DefaultScheme =
-    options.DefaultSignInScheme =
-    options.DefaultSignOutScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(options =>
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme; // For JWT as default
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
-        ValidIssuer = builder.Configuration["JWT:Issuer"],
         ValidateAudience = true,
-        ValidAudience = builder.Configuration["JWT:Audience"],
+        ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(
-            System.Text.Encoding.UTF8.GetBytes(builder.Configuration["JWT:SigningKey"] ?? throw new InvalidOperationException("JWT SigningKey is not configured"))
-        ),
-        NameClaimType = JwtRegisteredClaimNames.Email,
-        RoleClaimType = ClaimTypes.Role
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
     };
+})
+.AddCookie(options =>
+{
+    options.Cookie.Name = "YourAppCookie"; // Customize cookie settings if needed
 })
 .AddGoogle(options =>
 {
-    options.ClientId = builder.Configuration["Authentication:Google:ClientId"] ?? throw new InvalidOperationException("Google ClientId is not configured");
-    options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? throw new InvalidOperationException("Google ClientSecret is not configured");
+    options.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+    options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
 })
 .AddFacebook(options =>
 {
-    options.AppId = builder.Configuration["Authentication:Facebook:AppId"] ?? throw new InvalidOperationException("Facebook AppId is not configured");
-    options.AppSecret = builder.Configuration["Authentication:Facebook:AppSecret"] ?? throw new InvalidOperationException("Facebook AppSecret is not configured");
+    options.AppId = builder.Configuration["Authentication:Facebook:AppId"];
+    options.AppSecret = builder.Configuration["Authentication:Facebook:AppSecret"];
 });
 
+// Add Cloudinary
+builder.Services.AddSingleton<Cloudinary>(sp =>
+{
+    var cloudinarySettings = builder.Configuration.GetSection("CloudinarySettings");
+    var account = new Account(
+        cloudinarySettings["CloudName"],
+        cloudinarySettings["ApiKey"],
+        cloudinarySettings["ApiSecret"]
+    );
+    return new Cloudinary(account);
+});
 
-// Register TokenService
-builder.Services.AddScoped<ITokenService, TokenService>();
+// Configure CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp",
+         builder =>
+         {
+             builder.WithOrigins("http://localhost:3000") // Replace with your React app's URL
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials()
+                    .WithHeaders("Authorization"); // Allow Authorization header
+         });
+});
 
-// Register UserRepository
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-
-// Register UserService
-builder.Services.AddScoped<IUserService, UserService>();
-
-// Register EmailService
-builder.Services.AddScoped<IEmailService, EmailService>();
-
-// Register SmsService
-builder.Services.AddScoped<ISmsService, SmsService>();
-
-// Register QrCodeService
-builder.Services.AddScoped<IQrCodeService, QrCodeService>();
-
-// Register AccountService and AccountRepository
-builder.Services.AddScoped<IAccountService, AccountService>();
-builder.Services.AddScoped<IAccountRepository, AccountRepository>();
-
-// Register RoleService and RoleRepository
-builder.Services.AddScoped<IRoleService, RoleService>();
-builder.Services.AddScoped<IRoleRepository, RoleRepository>();
-
-// Register AutoMapper
+// Register services
+builder.Services.AddHttpClient();
 builder.Services.AddAutoMapper(typeof(RoleProfile));
+builder.Services.AddTransient<IEmailService, EmailService>();
+builder.Services.AddTransient<ISmsService, SmsService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IQRCodeService, QRCodeService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddSingleton<IVerificationCodeService, VerificationCodeService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddScoped<IRolePermissionService, RolePermissionService>();
 
+// Đăng ký dịch vụ để kiểm tra quyền
+// builder.Services.AddScoped<IUserPermissionService, UserPermissionService>();
+
+// // Đăng ký handler cho phân quyền
+// builder.Services.AddSingleton<IAuthorizationHandler, PermissionHandler>();
+
+// builder.Services.AddAuthorization(options =>
+// {
+//     // Cấu hình policy cho quyền
+//     options.AddPolicy("CreateUser", policy => policy.Requirements.Add(new PermissionRequirement("create_users")));
+//     options.AddPolicy("UpdateRole", policy => policy.Requirements.Add(new PermissionRequirement("edit_roles")));
+// });
+
+
+// Add controllers
+builder.Services.AddControllers();
+
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 
 // Add configuration to read environment variables
 builder.Configuration.AddEnvironmentVariables();
 
 var app = builder.Build();
 
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+    app.UseCors("AllowReactApp");
+}
+
+// Custom headers for COOP and COEP
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("Cross-Origin-Opener-Policy", "same-origin");
+    context.Response.Headers.Append("Cross-Origin-Embedder-Policy", "require-corp");
+    await next();
+});
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
 // Ensure roles are created
 using (var scope = app.Services.CreateScope())
 {
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<AppRole>>();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
     await EnsureRolesCreated(roleManager);
 }
 
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseHttpsRedirection();
-
-app.UseCors(x => x
-     .AllowAnyMethod()
-     .AllowAnyHeader()
-     .AllowCredentials()
-      //.WithOrigins("https://localhost:44351))
-      .SetIsOriginAllowed(origin => true));
-
-app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
 app.Run();
 
-
-async Task EnsureRolesCreated(RoleManager<AppRole> roleManager)
+// Method to create roles
+static async Task EnsureRolesCreated(RoleManager<Role> roleManager)
 {
-    var roles = new[] { "USER", "ADMIN" };
-
-    foreach (var role in roles)
+    var roleNames = new[] { "Admin", "User", "Manager" };
+    foreach (var roleName in roleNames)
     {
-        if (!await roleManager.RoleExistsAsync(role))
+        if (!await roleManager.RoleExistsAsync(roleName))
         {
-            await roleManager.CreateAsync(new AppRole { Name = role });
+            await roleManager.CreateAsync(new Role { Name = roleName });
         }
     }
 }
