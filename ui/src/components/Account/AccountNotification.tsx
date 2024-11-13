@@ -11,7 +11,7 @@ const AccountNotification: React.FC = () => {
     };
 
     return (
-        <div className="card">
+        <div className="card p-3">
             {/* Notifications */}
             <div className="card-body">
                 <h5 className="mb-1">Recent Devices</h5>
@@ -109,11 +109,11 @@ const AccountNotification: React.FC = () => {
                     </tbody>
                 </table>
             </div>
-            <div className="card-body">
+            <div className="card-body py-3 p-1">
                 <h6 className="text-body mb-6">When should we send you notifications?</h6>
                 <form onSubmit={handleSaveChanges}>
                     <div className="row">
-                        <div className="col-sm-6">
+                        <div className="col-sm-6 px-3">
                             <select id="sendNotification" className="form-select" name="sendNotification" value={sendNotification} onChange={(e) => setSendNotification(e.target.value)}>
                                 <option>Only when I'm online</option>
                                 <option>Anytime</option>

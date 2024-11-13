@@ -1,8 +1,39 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import avatarImage from '../../assets/img/avatars/1.png';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { GetPersonalInfoService } from '../../services/UserService';
+import { useAvatar } from '../../context/AvatarContextType';
 
 const Navbar: React.FC = () => {
+    const { avatar } = useAvatar();
+    const { logout } = useAuth();
+    const [avatarFromDB, setAvatarFromDB] = useState(avatarImage);
+    const [username, setUsername] = useState('');
+
+    useEffect(() => {
+        const fetchPersonalInfo = async () => {
+            try {
+                const response = await GetPersonalInfoService();
+                if (response.status === 'success') {
+                    const userData = response.data.user;
+                    setAvatarFromDB(userData.profilePicture || avatarImage);
+                    setUsername(userData.userName);
+                } else {
+                    console.error('Failed to retrieve personal info:', response.data.Message);
+                }
+            } catch (error) {
+                console.error('Error fetching personal info:', error);
+            }
+        };
+
+        fetchPersonalInfo();
+    }, []);
+
+    const handleLogout = () => {
+        logout();
+    };
+
     return (
         <nav className="layout-navbar container-xxl navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme" id="layout-navbar">
             <div className="layout-menu-toggle navbar-nav align-items-xl-center me-4 me-xl-0 d-xl-none">
@@ -22,14 +53,19 @@ const Navbar: React.FC = () => {
 
                 <ul className="navbar-nav flex-row align-items-center ms-auto">
                     <li className="nav-item lh-1 me-4">
-                        <a className="github-button" href="https://github.com/dungken/admin-ui" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star themeselection/sneat-html-admin-template-free on GitHub">Star</a>
+                        <a className="github-button" href="https://github.com/dungken/admin-ui" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star themeselection/sneat-html-admin-template-free on GitHub"> <i className="bi bi-star"></i> Star</a>
                     </li>
 
                     {/* User */}
                     <li className="nav-item dropdown">
                         <a className="nav-link dropdown-toggle hide-arrow p-0" href="#" role="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                             <div className="avatar avatar-online">
-                                <img src={avatarImage} className="w-px-40 h-auto rounded-circle" alt="User Avatar" />
+                                {avatar ? (
+                                    <img src={avatar} alt="User Avatar" className="rounded-circle" />
+                                ) : (
+                                    <img src={avatarFromDB} alt="User Avatar" className="rounded-circle" />
+                                )}
+
                             </div>
                         </a>
                         {/* <!-- Avatar Dropdown Menu --> */}
@@ -38,18 +74,22 @@ const Navbar: React.FC = () => {
                                 <a className="dropdown-item d-flex align-items-center py-2" href="#">
                                     <div className="d-flex align-items-center">
                                         <div className="avatar avatar-online me-3">
-                                            <img src="/static/media/1.eae03c9bb612706cf449.png" className="rounded-circle" alt="User Avatar" />
+                                            {avatar ? (
+                                                <img src={avatar} alt="User Avatar" className="rounded-circle" />
+                                            ) : (
+                                                <img src={avatarFromDB} alt="User Avatar" className="rounded-circle" />
+                                            )}
                                         </div>
-                                        <div className='text-center'>
-                                            <h6 className="mb-0 fw-bold">John Doe</h6>
-                                            {/* <small className="text-muted">Admin</small> */}
+                                        <div className='text-start'>
+                                            <small className="text-muted">Admin</small>
+                                            <h6 className="mb-0 fw-bold">{username ?? 'username'}</h6>
                                         </div>
                                     </div>
                                 </a>
                             </li>
                             <li className="dropdown-divider"> <hr /></li>
                             <li><Link className="dropdown-item d-flex align-items-center py-2" to="/my-profile"><i className="bx bx-user me-2 fs-5"></i> My Profile</Link></li>
-                            <li><Link className="dropdown-item d-flex align-items-center py-2" to="/security"><i className="bx bx-cog me-2 fs-5"></i> Settings</Link></li>
+                            <li><Link className="dropdown-item d-flex align-items-center py-2" to="/change-password"><i className="bx bx-cog me-2 fs-5"></i> Settings</Link></li>
                             {/* <li>
                                 <a className="dropdown-item d-flex align-items-center justify-content-between py-2" href="#">
                                     <span><i className="bx bx-credit-card me-2 fs-5"></i> Billing Plan</span>
@@ -57,7 +97,7 @@ const Navbar: React.FC = () => {
                                 </a>
                             </li> */}
                             <li className="dropdown-divider"> <hr /></li>
-                            <li><Link className="dropdown-item d-flex align-items-center py-2" to="/logout" data-bs-toggle="modal" data-bs-target="#logoutModal"><i className="bx bx-power-off me-2 fs-5"></i> Log Out</Link></li>
+                            <li><a className="dropdown-item d-flex align-items-center py-2" href="#" onClick={handleLogout}><i className="bx bx-power-off me-2 fs-5"></i> Log Out</a></li>
                         </ul>
 
                     </li>

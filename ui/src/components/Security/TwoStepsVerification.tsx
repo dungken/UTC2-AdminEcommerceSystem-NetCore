@@ -1,68 +1,133 @@
-// src/components/Pages/TwoStepsVerification.tsx
-import React, { useState } from 'react';
-import './TwoStepsVerification.css'; // Import any necessary CSS
+import React, { useState, useRef, useEffect } from 'react';
+import { DisableTwoFactorVerificationService, EnabledTwoFactorVerificationService, VerifyCodeService, GetTwoFAStatusService } from '../../services/AuthService';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import './TwoStepsVerification.css';
 
 const TwoStepsVerification: React.FC = () => {
-    const [phoneNumber, setPhoneNumber] = useState('');
+    const [verificationCode, setVerificationCode] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isCodeSent, setIsCodeSent] = useState(false);
+    const [isVerified, setIsVerified] = useState(false);
+    const inputRef = useRef<HTMLInputElement | null>(null);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    // Fetch the current 2FA status on component mount
+    useEffect(() => {
+        const checkTwoFAStatus = async () => {
+            try {
+                const response = await GetTwoFAStatusService();
+                if (response.data.isTwoFAEnabled) {
+                    setIsVerified(true); // 2FA is enabled
+                }
+            } catch (error) {
+                toast.error("Failed to fetch 2FA status.");
+            }
+        };
+
+        checkTwoFAStatus();
+    }, []);
+
+    const handleSendCode = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Handle form submission logic here
+        setIsSubmitting(true);
+        try {
+            const response = await EnabledTwoFactorVerificationService();
+            if (response.data.status === "success") {
+                toast.success(response.data.message);
+                setIsCodeSent(true);
+                if (inputRef.current) {
+                    inputRef.current.focus();
+                }
+            } else {
+                toast.error(response.data.message);
+            }
+        } catch (error: any) {
+            toast.error(error.response.data.message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleVerifyCode = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            const response = await VerifyCodeService(verificationCode);
+            if (response.data.status === "success") {
+                toast.success(response.data.message);
+                setIsVerified(true);
+                setIsCodeSent(false); // Hide the verification form
+                setVerificationCode(''); // Clear the input
+            } else {
+                toast.error(response.data.message);
+            }
+        } catch (error: any) {
+            if (error.response && error.response.data.value.message) {
+                toast.error(error.response.data.value.message);
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleToggle2FA = async () => {
+        setIsSubmitting(true);
+        try {
+            if (isVerified) {
+                const response = await DisableTwoFactorVerificationService();
+                if (response.data.status === "success") {
+                    toast.success(response.data.message);
+                    setIsVerified(false); // Reset the verification state
+                    setIsCodeSent(false); // Optionally reset the code sent state
+                    setVerificationCode(''); // Clear the input for a fresh start
+                } else {
+                    toast.error(response.data.message);
+                }
+            } else {
+                await handleSendCode({ preventDefault: () => { } } as React.FormEvent); // Trigger the code sending function
+            }
+        } catch (error) {
+            toast.error("An error occurred while toggling 2FA.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
-        <div className="card mb-6">
-            <div className="card-body">
-                <h5 className="mb-6">Two-steps verification</h5>
-                <h5 className="mb-4 text-body">Two factor authentication is not enabled yet.</h5>
-                <p className="w-75">
-                    Two-factor authentication adds an additional layer of security to your account by requiring more than just a password to log in.
-                    <a href="javascript:void(0);" className="text-nowrap">Learn more.</a>
-                </p>
-                <button className="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#enableOTP">
-                    Enable Two-Factor Authentication
+        <div className={`row p-4 ${!(isCodeSent && !isVerified) ? 'col-md-12' : ''}`}>
+            <div className="card-body col-md-4">
+                <h5 className="card-title">Two-Step Verification</h5>
+                <button className={`btn btn-${isVerified ? 'danger' : 'primary'} mt-2`} onClick={handleToggle2FA} disabled={isSubmitting}>
+                    {isSubmitting ? (isVerified ? 'Disabling...' : 'Sending...') : (isVerified ? 'Disable Two-Factor Authentication' : 'Enable Two-Factor Authentication')}
                 </button>
             </div>
 
-            {/* Modal */}
-            {/* Enable OTP Modal */}
-            <div className="modal fade" id="enableOTP" tabIndex={-1} aria-hidden="true">
-                <div className="modal-dialog modal-simple modal-enable-otp modal-dialog-centered">
-                    <div className="modal-content">
-                        <div className="modal-body">
-                            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            <div className="text-center mb-6">
-                                <h4 className="mb-2">Enable One Time Password</h4>
-                                <p>Verify Your Mobile Number for SMS</p>
-                            </div>
-                            <p>Enter your mobile phone number with country code and we will send you a verification code.</p>
-                            <form id="enableOTPForm" className="row g-6 fv-plugins-bootstrap5 fv-plugins-framework" onSubmit={handleSubmit} noValidate>
-                                <div className="col-12 fv-plugins-icon-container">
-                                    <label className="form-label" htmlFor="modalEnableOTPPhone">Phone Number</label>
-                                    <div className="input-group has-validation">
-                                        <span className="input-group-text">US (+1)</span>
-                                        <input
-                                            type="text"
-                                            id="modalEnableOTPPhone"
-                                            name="modalEnableOTPPhone"
-                                            className="form-control phone-number-otp-mask"
-                                            placeholder="202 555 0111"
-                                            value={phoneNumber}
-                                            onChange={(e) => setPhoneNumber(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"></div>
-                                </div>
-                                <div className="col-12">
-                                    <button type="submit" className="btn btn-primary me-3">Submit</button>
-                                    <button type="reset" className="btn btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">Cancel</button>
-                                </div>
-                                <input type="hidden" />
-                            </form>
+            {/* Display verification form if the code has been sent and not verified */}
+            {isCodeSent && !isVerified && (
+                <div className="card-body col-md-7">
+                    <h5>Enter Verification Code</h5>
+                    <form id="verifyCodeForm" className="row g-6 mt-4" onSubmit={handleVerifyCode} noValidate>
+                        <div className="col-12">
+                            <label className="form-label" htmlFor="verificationCode">Verification Code</label>
+                            <input
+                                ref={inputRef}
+                                type="text"
+                                className="form-control"
+                                id="verificationCode"
+                                name="verificationCode"
+                                placeholder="Enter verification code"
+                                value={verificationCode}
+                                onChange={(e) => setVerificationCode(e.target.value)}
+                                required
+                                disabled={isSubmitting}
+                            />
+                            <button className="btn btn-primary d-grid w-100 mt-2" type="submit" disabled={isSubmitting}>
+                                {isSubmitting ? 'Verifying...' : 'Verify Code'}
+                            </button>
                         </div>
-                    </div>
+                    </form>
                 </div>
-            </div>
+            )}
         </div>
     );
 };

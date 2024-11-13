@@ -1,83 +1,109 @@
-// src/components/Pages/ChangePassword.tsx
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import './ChangePassword.css'; // Import any necessary CSS
+import { ChangePasswordService } from '../../services/AuthService';
+import { ValidatePassword } from '../../utils/Validation';
 
 const ChangePassword: React.FC = () => {
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [passwordVisible, setPasswordVisible] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const validateForm = () => {
+        if (currentPassword.length < 8) {
+            toast.error('Please enter your current password.');
+            return false;
+        }
+        if (!ValidatePassword(newPassword, confirmPassword)) {
+            return false;
+        }
+        return true;
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Handle form submission logic here
+        if (!validateForm()) return;
+
+        try {
+            const response = await ChangePasswordService(currentPassword, newPassword);
+
+            if (response.data && response.data.status === "success") {
+                toast.success(response.data.message);
+                setCurrentPassword('');
+                setNewPassword('');
+                setConfirmPassword('');
+            } else {
+                throw new Error(response.data.message || "An unexpected error occurred)");
+            }
+        } catch (error: any) {
+            toast.error(error.response.data.errors[0] || "An unexpected error occurred.");
+        }
     };
 
     return (
-        <div className="card mb-6">
+        <div className="card mb-0">
             <h5 className="card-header">Change Password</h5>
             <div className="card-body pt-1">
-                <form id="formAccountSettings" method="GET" onSubmit={handleSubmit} className="fv-plugins-bootstrap5 fv-plugins-framework" noValidate>
+                <form id="formAccountSettings" method="POST" onSubmit={handleSubmit} className="fv-plugins-bootstrap5 fv-plugins-framework" noValidate>
                     <div className="row">
-                        <div className="mb-6 col-md-3 form-password-toggle fv-plugins-icon-container">
+                        <div className="mb-6 col-md-12 form-password-toggle fv-plugins-icon-container">
                             <label className="form-label" htmlFor="currentPassword">Current Password</label>
                             <div className="input-group input-group-merge has-validation">
                                 <input
                                     className="form-control"
-                                    type="password"
+                                    type={passwordVisible ? 'text' : 'password'}
                                     name="currentPassword"
                                     id="currentPassword"
                                     placeholder="············"
                                     value={currentPassword}
                                     onChange={(e) => setCurrentPassword(e.target.value)}
+                                    required
                                 />
-                                <span className="input-group-text cursor-pointer"><i className="bx bx-hide"></i></span>
+                                <span className="input-group-text cursor-pointer" onClick={() => setPasswordVisible(!passwordVisible)}>
+                                    <i className={`bx ${passwordVisible ? 'bx-show' : 'bx-hide'}`}></i>
+                                </span>
                             </div>
-                            <div className="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"></div>
                         </div>
-                        <div className="mb-6 col-md-3 form-password-toggle fv-plugins-icon-container">
+                        <div className="mb-6 col-md-12 form-password-toggle fv-plugins-icon-container">
                             <label className="form-label" htmlFor="newPassword">New Password</label>
                             <div className="input-group input-group-merge has-validation">
                                 <input
                                     className="form-control"
-                                    type="password"
-                                    id="newPassword"
+                                    type={passwordVisible ? 'text' : 'password'}
                                     name="newPassword"
+                                    id="newPassword"
                                     placeholder="············"
                                     value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)}
+                                    required
                                 />
-                                <span className="input-group-text cursor-pointer"><i className="bx bx-hide"></i></span>
+                                <span className="input-group-text cursor-pointer" onClick={() => setPasswordVisible(!passwordVisible)}>
+                                    <i className={`bx ${passwordVisible ? 'bx-show' : 'bx-hide'}`}></i>
+                                </span>
                             </div>
-                            <div className="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"></div>
                         </div>
-                        <div className="mb-6 col-md-3 form-password-toggle fv-plugins-icon-container">
+                        <div className="mb-6 col-md-12 form-password-toggle fv-plugins-icon-container">
                             <label className="form-label" htmlFor="confirmPassword">Confirm New Password</label>
                             <div className="input-group input-group-merge has-validation">
                                 <input
                                     className="form-control"
-                                    type="password"
+                                    type={passwordVisible ? 'text' : 'password'}
                                     name="confirmPassword"
                                     id="confirmPassword"
                                     placeholder="············"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
+                                    required
                                 />
-                                <span className="input-group-text cursor-pointer"><i className="bx bx-hide"></i></span>
+                                <span className="input-group-text cursor-pointer" onClick={() => setPasswordVisible(!passwordVisible)}>
+                                    <i className={`bx ${passwordVisible ? 'bx-show' : 'bx-hide'}`}></i>
+                                </span>
                             </div>
-                            <div className="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"></div>
                         </div>
                     </div>
-                    <h6 className="text-body">Password Requirements:</h6>
-                    <ul className="ps-4 mb-0">
-                        <li className="mb-4">Minimum 8 characters long - the more, the better</li>
-                        <li className="mb-4">At least one lowercase character</li>
-                        <li>At least one number, symbol, or whitespace character</li>
-                    </ul>
-                    <div className="mt-6">
-                        <button type="submit" className="btn btn-primary me-3">Save changes</button>
-                        <button type="reset" className="btn btn-label-secondary">Reset</button>
-                    </div>
-                    <input type="hidden" />
+                    <button className="btn btn-primary d-grid w-100" type="submit">Change Password</button>
                 </form>
             </div>
         </div>

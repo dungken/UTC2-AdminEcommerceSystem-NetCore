@@ -1,0 +1,9 @@
+.modal-body {
+   position: relative;
+}
+
+.btn-close {
+   position: absolute;
+   top: 0px;
+   right: 0px;
+}

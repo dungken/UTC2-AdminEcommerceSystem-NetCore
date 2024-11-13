@@ -1,76 +1,98 @@
-// src/components/Pages/EditPermissionModal.tsx
-import React, { useState } from 'react';
-// import './EditPermissionModal.css'; // Import any necessary CSS
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 
 interface EditPermissionModalProps {
     isOpen: boolean;
     onClose: () => void;
+    permission: any | null;
+    onPermissionUpdated: () => void;
 }
 
-const EditPermissionModal: React.FC<EditPermissionModalProps> = ({ isOpen, onClose }) => {
+const EditPermissionModal: React.FC<EditPermissionModalProps> = ({ isOpen, onClose, permission, onPermissionUpdated }) => {
     const [permissionName, setPermissionName] = useState('');
-    const [isCorePermission, setIsCorePermission] = useState(false);
+    const [permissionDesc, setPermissionDesc] = useState('');
 
-    const handleSubmit = (e: React.FormEvent) => {
+    useEffect(() => {
+        if (permission) {
+            setPermissionName(permission.name);
+            setPermissionDesc(permission.description);
+        }
+    }, [permission]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Handle form submission logic here
+        // Validation
+        if (!permission) {
+            return;
+        }
+        // Validation 
+        if (!permissionName) {
+            toast.error('Permission name is required');
+            return;
+        }
+        if (!permissionDesc) {
+            toast.error('Permission description is required');
+            return;
+        }
+
+        try {
+            const response = await axios.put(`Permission/Update/${permission?.permissionId}`, {
+                permissionId: permission?.permissionId,
+                name: permissionName,
+                description: permissionDesc,
+                rolePermissions: []
+            });
+            if (response.status !== 204) {
+                console.error('Error updating permission');
+                return;
+            }
+            toast.success('Permission updated successfully');
+            onPermissionUpdated();
+            onClose();
+        } catch (error) {
+            console.error('Error updating permission:', error);
+        }
     };
 
     return (
-        <div className="modal fade" id="editPermissionModal" tabIndex={-1} aria-hidden="true">
-            <div className="modal-dialog modal-dialog-centered modal-simple">
-                <div className="modal-content">
-                    <div className="modal-body">
-                        <button type="button" className="btn-close btn-pinned" data-bs-dismiss="modal" aria-label="Close"></button>
-                        <div className="text-center mb-6">
+        <>
+            {isOpen && <div className="modal-backdrop fade show"></div>}
+            <div className={`modal fade ${isOpen ? 'show' : ''}`} tabIndex={-1} style={{ display: isOpen ? 'block' : 'none' }}>
+                <div className="modal-dialog modal-dialog-centered modal-simple">
+                    <div className="modal-content">
+                        <div className="modal-body">
+                            <button type="button" className="btn-close" onClick={onClose} aria-label="Close"></button>
                             <h4 className="mb-2">Edit Permission</h4>
-                            <p>Edit permission as per your requirements.</p>
-                        </div>
-                        <div className="alert alert-warning" role="alert">
-                            <span>
-                                <span className="alert-heading mb-1 h5">Warning</span><br />
-                                <span className="mb-0 p">By editing the permission name, you might break the system permissions functionality. Please ensure you're absolutely certain before proceeding.</span>
-                            </span>
-                        </div>
-                        <form id="editPermissionForm" className="row pt-2 row-gap-2 gx-4 fv-plugins-bootstrap5 fv-plugins-framework" onSubmit={handleSubmit} noValidate>
-                            <div className="col-sm-9 fv-plugins-icon-container">
-                                <label className="form-label" htmlFor="editPermissionName">Permission Name</label>
-                                <input
-                                    type="text"
-                                    id="editPermissionName"
-                                    name="editPermissionName"
-                                    className="form-control"
-                                    placeholder="Permission Name"
-                                    value={permissionName}
-                                    onChange={(e) => setPermissionName(e.target.value)}
-                                    tabIndex={-1}
-                                />
-                                <div className="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"></div>
-                            </div>
-                            <div className="col-sm-3 mb-4">
-                                <label className="form-label invisible d-none d-sm-inline-block">Button</label>
-                                <button type="submit" className="btn btn-primary mt-1 mt-sm-0">Update</button>
-                            </div>
-                            <div className="col-12">
-                                <div className="form-check my-2 ms-2">
+                            <form onSubmit={handleSubmit}>
+                                <div className="mb-3">
+                                    <label className="form-label">Permission Name</label>
                                     <input
-                                        className="form-check-input"
-                                        type="checkbox"
-                                        id="editCorePermission"
-                                        checked={isCorePermission}
-                                        onChange={(e) => setIsCorePermission(e.target.checked)}
+                                        type="text"
+                                        className="form-control"
+                                        value={permissionName}
+                                        onChange={(e) => setPermissionName(e.target.value)}
                                     />
-                                    <label className="form-check-label" htmlFor="editCorePermission">
-                                        Set as core permission
-                                    </label>
                                 </div>
-                            </div>
-                            <input type="hidden" />
-                        </form>
+                                <div className="mb-3">
+                                    <label className="form-label">Permission Description</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        value={permissionDesc}
+                                        onChange={(e) => setPermissionDesc(e.target.value)}
+                                    />
+                                </div>
+                                <div className="mb-3">
+                                    <button type="submit" className="btn btn-primary mx-2">Save Changes</button>
+                                    <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 };
 

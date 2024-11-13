@@ -1,113 +1,185 @@
+using System.Threading.Tasks;
+using api.Data;
 using api.Dtos.Role;
-using api.Interfaces;
 using api.Models;
-using AutoMapper;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace api.Services
 {
     public class RoleService : IRoleService
     {
-        private readonly IRoleRepository _roleRepository;
-        private readonly IMapper _mapper;
-        private readonly UserManager<AppUser> _userManager;
+        private readonly RoleManager<Role> _roleManager;
+        private readonly IRolePermissionService _rolePermissionService;
+        private readonly IPermissionService _permissionService;
+        private readonly UserManager<User> _userManager; // Assuming User is your user class
+        private readonly ApplicationDbContext _context;
 
-        public RoleService(IRoleRepository roleRepository, IMapper mapper, UserManager<AppUser> userManager)
+        public RoleService(
+            RoleManager<Role> roleManager,
+            IPermissionService permissionService,
+            IRolePermissionService rolePermissionService,
+            UserManager<User> userManager,
+            ApplicationDbContext context) // Assuming User is your user class
         {
-            _roleRepository = roleRepository;
-            _mapper = mapper;
             _userManager = userManager;
+            _roleManager = roleManager;
+            _permissionService = permissionService;
+            _rolePermissionService = rolePermissionService;
+            _userManager = userManager;
+            _context = context;
+        }
+
+        public async Task<IEnumerable<RoleDto>> GetAllRolesAsync()
+        {
+            var roles = await _roleManager.Roles.ToListAsync();
+            var roleDtos = new List<RoleDto>();
+
+            foreach (var role in roles)
+            {
+                // Get users in the role
+                var usersInRole = await _userManager.GetUsersInRoleAsync(role.Name);
+                var avatars = usersInRole.Select(u => u.ProfilePicture).ToList();
+
+                // Get the permissions for the role (assumed you have a RolePermission table or service)
+                var permissions = await GetPermissionsForRoleAsync(role.Id);
+
+                // Create RoleDto
+                roleDtos.Add(new RoleDto
+                {
+                    Id = role.Id,
+                    Name = role.Name,
+                    TotalUser = usersInRole.Count,
+                    Avatars = avatars,
+                    Permissions = permissions.ToList() // Add permissions here
+                });
+            }
+
+            return roleDtos;
+        }
+
+        // A helper method to fetch the permissions for a given role
+        private async Task<IEnumerable<Guid>> GetPermissionsForRoleAsync(Guid roleId)
+        {
+            // Assuming that you have a RolePermission service to fetch the permissions by roleId
+            // Modify this method to suit your actual implementation for fetching permissions
+
+            var rolePermissions = await _rolePermissionService.GetPermissionsByRoleIdAsync(roleId);
+
+            // You can return permission names or other related info, depending on your implementation
+            return rolePermissions.Select(rp => rp.Permission.PermissionId).ToList();
         }
 
 
-        public async Task<IEnumerable<RoleDto>> GetRolesAsync()
+        // Get role by ID
+        public async Task<Role> GetRoleByIdAsync(string roleId)
         {
-            var roles = await _roleRepository.GetRolesAsync();
-            return _mapper.Map<IEnumerable<RoleDto>>(roles);
+            return await _roleManager.FindByIdAsync(roleId);
         }
 
-        public async Task<RoleDto> GetRoleByIdAsync(string roleId)
+        // Create or update role based on role name
+        public async Task<Role> CreateOrUpdateRoleAsync(CreateRoleDto roleDto)
         {
-            var role = await _roleRepository.GetRoleByIdAsync(roleId);
-            return _mapper.Map<RoleDto>(role);
+            var existingRole = await _roleManager.FindByNameAsync(roleDto.Name);
+            if (existingRole != null)
+            {
+                return await UpdateRoleAsync(existingRole, roleDto);
+            }
+            else
+            {
+                return await CreateRoleAsync(roleDto);
+            }
         }
 
-        public async Task<bool> CreateRoleAsync(RoleDto roleDto)
+        // Create a new role
+        private async Task<Role> CreateRoleAsync(CreateRoleDto roleDto)
         {
-            var role = _mapper.Map<AppRole>(roleDto);
-            return await _roleRepository.CreateRoleAsync(role);
+            var role = new Role { Name = roleDto.Name };
+            var createResult = await _roleManager.CreateAsync(role);
+
+            if (!createResult.Succeeded)
+            {
+                return null; // Handle failure
+            }
+
+            // Directly use the permission GUIDs from the frontend
+            List<Guid> permissionIds = roleDto.Permissions; // No need to fetch permissions by name
+
+            if (!permissionIds.Any())
+            {
+                return null; // Handle failure, no valid permissions found
+            }
+
+            bool assignResult = await AssignPermissionsToRoleAsync(role.Id, permissionIds);
+
+            return assignResult ? role : null;
         }
 
-        public async Task<bool> UpdateRoleAsync(RoleDto roleDto)
+        // Update an existing role
+        private async Task<Role> UpdateRoleAsync(Role existingRole, CreateRoleDto roleDto)
         {
-            var role = _mapper.Map<AppRole>(roleDto);
-            return await _roleRepository.UpdateRoleAsync(role);
+            // Update the role name
+            existingRole.Name = roleDto.Name;
+            var updateResult = await _roleManager.UpdateAsync(existingRole);
+
+            if (!updateResult.Succeeded)
+            {
+                return null; // Handle failure
+            }
+
+            // Directly use the permission GUIDs from the frontend
+            List<Guid> permissionIds = roleDto.Permissions;
+
+            if (!permissionIds.Any())
+            {
+                return null; // Handle failure, no valid permissions found
+            }
+
+            bool assignResult = await AssignPermissionsToRoleAsync(existingRole.Id, permissionIds);
+            return assignResult ? existingRole : null;
         }
 
-        public async Task<bool> DeleteRoleAsync(string roleId)
+        // Assign permissions to a role
+        private async Task<bool> AssignPermissionsToRoleAsync(Guid roleId, IEnumerable<Guid> permissionIds)
         {
-            return await _roleRepository.DeleteRoleAsync(roleId);
+            foreach (var permissionId in permissionIds)
+            {
+                var dto = new RolePermissionDto
+                {
+                    RoleId = roleId,
+                    PermissionId = permissionId
+                };
+
+                var result = await _rolePermissionService.AssignPermissionToRoleAsync(dto);
+                if (result != "Permission assigned to role successfully.")
+                {
+                    return false; // Handle failure
+                }
+            }
+
+            return true;
         }
 
-        public async Task<IEnumerable<PermissionDto>> GetPermissionsAsync()
+        // Delete a role by ID (Guid type expected)
+        public async Task<bool> DeleteRoleAsync(Guid roleId)
         {
-            var permissions = await _roleRepository.GetPermissionsAsync();
-            return _mapper.Map<IEnumerable<PermissionDto>>(permissions);
-        }
+            var role = await _roleManager.FindByIdAsync(roleId.ToString());
+            if (role == null)
+                return false;
 
-        public async Task<bool> AssignPermissionToRoleAsync(string roleId, string permissionId)
-        {
-            return await _roleRepository.AssignPermissionToRoleAsync(roleId, permissionId);
-        }
-
-        public async Task<bool> RemovePermissionFromRoleAsync(string roleId, string permissionId)
-        {
-            return await _roleRepository.RemovePermissionFromRoleAsync(roleId, permissionId);
-        }
-
-        public async Task<PermissionDto> GetPermissionByIdAsync(string id)
-        {
-            var permission = await _roleRepository.GetPermissionByIdAsync(id);
-            return _mapper.Map<PermissionDto>(permission);
-        }
-
-        public async Task<bool> CreatePermissionAsync(PermissionDto permissionDto)
-        {
-            var permission = _mapper.Map<Permission>(permissionDto);
-            return await _roleRepository.CreatePermissionAsync(permission);
-        }
-
-        public async Task<bool> UpdatePermissionAsync(PermissionDto permissionDto)
-        {
-            var permission = _mapper.Map<Permission>(permissionDto);
-            return await _roleRepository.UpdatePermissionAsync(permission);
-        }
-
-        public async Task<bool> DeletePermissionAsync(string id)
-        {
-            return await _roleRepository.DeletePermissionAsync(id);
-        }
-
-        public async Task<bool> AssignRoleToUserAsync(string userId, string roleId)
-        {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null) return false;
-
-            var result = await _userManager.AddToRoleAsync(user, roleId);
+            var result = await _roleManager.DeleteAsync(role);
             return result.Succeeded;
         }
 
-        public async Task<IEnumerable<RoleDto>> GetRolesAsync(AppUser user)
+        public async Task<Guid?> GetRoleIdByNameAsync(string roleName)
         {
-            var roles = await _userManager.GetRolesAsync(user);
-            var roleEntities = await _roleRepository.GetRolesByNamesAsync(roles);
-            return _mapper.Map<IEnumerable<RoleDto>>(roleEntities);
+            var role = await _context.Roles
+                .Where(r => r.Name.ToLower() == roleName.ToLower())  // Dùng ToLower() để so sánh không phân biệt hoa thường
+                .Select(r => r.Id)
+                .FirstOrDefaultAsync();
+
+            return role == Guid.Empty ? (Guid?)null : role;
         }
 
-        async Task<IEnumerable<RoleDto>> IRoleService.GetRolesAsync()
-        {
-            var roles = await _roleRepository.GetRolesAsync();
-            return _mapper.Map<IEnumerable<RoleDto>>(roles);
-        }
     }
 }

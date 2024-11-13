@@ -15,9 +15,9 @@ const Sidebar: React.FC = () => {
 
     return (
         <div>
-            <aside id="layout-menu" className="text-decoration-none layout-menu menu-vertical menu bg-menu-theme" style={{ maxHeight: '100vh', overflowY: 'scroll', overflowX: 'hidden' }}>
+            <aside id="layout-menu" className="text-decoration-none layout-menu menu-vertical menu bg-menu-theme" style={{ maxHeight: '', overflowY: 'scroll', overflowX: 'hidden' }}>
                 <div className="app-brand demo">
-                    <Link to="index.html" className="app-brand-link">
+                    <Link to="/" className="app-brand-link">
                         <img src={logo} alt="Brand Logo" className="img-fluid w-25" />
                         <span className="app-brand-text demo menu-text fw-bold ms-2">Coolmate</span>
                     </Link>
@@ -32,65 +32,29 @@ const Sidebar: React.FC = () => {
                 <ul className="menu-inner py-1">
                     {/* <!-- DASHBOARD --> */}
                     <li className={`menu-item ${openMenu === 'dashboard' ? 'open' : ''}`}>
-                        <Link to="#" className="menu-link menu-toggle" onClick={() => toggleMenu('dashboard')}>
+                        <Link to="/dashboard" className="menu-link menu-toggle" onClick={() => toggleMenu('dashboard')}>
                             <i className="menu-icon tf-icons bx bx-home-smile"></i>
                             <div className="text-truncate" data-i18n="Dashboards">Dashboards</div>
                             <span className="badge rounded-pill bg-danger ms-auto">5</span>
                         </Link>
-                        {openMenu === 'dashboard' && (
-                            <ul className="menu-sub">
-                                <li className="menu-item active">
-                                    <Link to="index.html" className="menu-link">
-                                        <div className="text-truncate" data-i18n="Analytics">Analytics</div>
-                                    </Link>
-                                </li>
-                            </ul>
-                        )}
                     </li>
 
                     {/* <!-- ACCOUNT  MANAGEMENT --> */}
                     <li className="menu-header small text-uppercase">
                         <span className="menu-header-text">User & Account</span>
                     </li>
-                    <li className={`menu-item ${openMenu === 'users' ? 'open' : ''}`}>
-                        <Link to="/users" className="menu-link menu-toggle" onClick={() => toggleMenu('users')}>
+                    <li className={`menu-item ${openMenu === 'User' ? 'open' : ''}`}>
+                        <Link to="/user" className="menu-link menu-toggle" onClick={() => toggleMenu('User')}>
                             <i className="menu-icon tf-icons bx bx-user"></i>
-                            <div className="text-truncate" data-i18n="Account Settings">Users</div>
+                            <div className="text-truncate" data-i18n="Account Settings">User</div>
                         </Link>
-                        {/* {openMenu === 'users' && (
-                            <ul className="menu-sub">
-                                <li className="menu-item">
-                                    <Link to="/users" className="menu-link">
-                                        <div className="text-truncate" data-i18n="Account">Views</div>
-                                    </Link>
-                                </li>
-                            </ul>
-                        )} */}
                     </li>
                     <li className={`menu-item ${openMenu === 'accountSettings' ? 'open' : ''}`}>
                         <Link to="/my-profile" className="menu-link menu-toggle" onClick={() => toggleMenu('accountSettings')}>
                             <i className="menu-icon tf-icons bx bx-dock-top"></i>
                             <div className="text-truncate" data-i18n="Account Settings">Account Settings</div>
                         </Link>
-                        {/* {openMenu === 'accountSettings' && (
-                            <ul className="menu-sub">
-                                <li className="menu-item">
-                                    <Link to="/my-profile" className="menu-link">
-                                        <div className="text-truncate" data-i18n="Account">Account</div>
-                                    </Link>
-                                </li>
-                                <li className="menu-item">
-                                    <Link to="/account-notifications" className="menu-link">
-                                        <div className="text-truncate" data-i18n="Notifications">Notifications</div>
-                                    </Link>
-                                </li>
-                                <li className="menu-item">
-                                    <Link to="/account-connections" className="menu-link">
-                                        <div className="text-truncate" data-i18n="Connections">Connections</div>
-                                    </Link>
-                                </li>
-                            </ul>
-                        )} */}
+
                     </li>
                     <li className={`menu-item ${openMenu === 'authentications' ? 'open' : ''}`}>
                         <Link to="/change-password" className="menu-link menu-toggle" onClick={() => toggleMenu('authentications')}>
@@ -120,17 +84,17 @@ const Sidebar: React.FC = () => {
                     <li className={`menu-item ${openMenu === 'rolesPermissions' ? 'open' : ''}`}>
                         <Link to="#" className="menu-link menu-toggle" onClick={() => toggleMenu('rolesPermissions')}>
                             <i className="menu-icon tf-icons bx bx-check-shield"></i>
-                            <div className="text-truncate" data-i18n="Account Settings">Roles & Permissions</div>
+                            <div className="text-truncate" data-i18n="Account Settings">Role & Permissions</div>
                         </Link>
                         {openMenu === 'rolesPermissions' && (
                             <ul className="menu-sub">
                                 <li className="menu-item">
-                                    <Link to="/roles" className="menu-link">
-                                        <div className="text-truncate" data-i18n="Account">Roles</div>
+                                    <Link to="/role" className="menu-link">
+                                        <div className="text-truncate" data-i18n="Account">Role</div>
                                     </Link>
                                 </li>
                                 <li className="menu-item">
-                                    <Link to="/permissions" className="menu-link">
+                                    <Link to="/permission" className="menu-link">
                                         <div className="text-truncate" data-i18n="Notifications">Permission</div>
                                     </Link>
                                 </li>
@@ -140,70 +104,63 @@ const Sidebar: React.FC = () => {
 
                     {/* <!-- PRODUCT CATEGORY MANAGEMENT --> */}
                     <li className="menu-header small text-uppercase">
-                        <span className="menu-header-text">Product Category</span>
+                        <span className="menu-header-text">Product Management</span>
                     </li>
-                    {/* <!-- Crud Category --> */}
                     <li className={`menu-item ${openMenu === 'category' ? 'open' : ''}`}>
-                        <Link to="#" className="menu-link menu-toggle" onClick={() => toggleMenu('category')}>
+                        <Link to="/product-category" className="menu-link menu-toggle" onClick={() => toggleMenu('category')}>
                             <i className="menu-icon tf-icons bx bx-layout"></i>
                             <div className="text-truncate" data-i18n="Layouts">Category</div>
                         </Link>
-                        {openMenu === 'category' && (
+                    </li>
+                    <li className={`menu-item ${openMenu === 'hierarchy' ? 'open' : ''}`}>
+                        <Link to="/hierarchy-category" className="menu-link menu-toggle" onClick={() => toggleMenu('hierarchy')}>
+                            <i className="menu-icon tf-icons bx bx-layout"></i>
+                            <div className="text-truncate" data-i18n="Layouts">Hierarchy</div>
+                        </Link>
+                    </li>
+                    <li className={`menu-item ${openMenu === 'product' ? 'open' : ''}`}>
+                        <Link to="/product" className="menu-link menu-toggle" onClick={() => toggleMenu('product')}>
+                            <i className="menu-icon tf-icons bx bx-layout"></i>
+                            <div className="text-truncate" data-i18n="Layouts">Product</div>
+                        </Link>
+                        {openMenu === 'product' && (
                             <ul className="menu-sub">
                                 <li className="menu-item">
-                                    <Link to="#" className="menu-link">
-                                        <div className="text-truncate" data-i18n="Without menu">Create</div>
-                                    </Link>
-                                </li>
-                                <li className="menu-item">
-                                    <Link to="#" className="menu-link">
-                                        <div className="text-truncate" data-i18n="Without navbar">Edit</div>
-                                    </Link>
-                                </li>
-                                <li className="menu-item">
-                                    <Link to="#" className="menu-link">
-                                        <div className="text-truncate" data-i18n="Without navbar">....</div>
+                                    <Link to="/product/create" className="menu-link">
+                                        <div className="text-truncate" data-i18n="Account">Create</div>
                                     </Link>
                                 </li>
                             </ul>
                         )}
                     </li>
-                    {/* <!-- Hierarchy Category --> */}
-                    <li className={`menu-item ${openMenu === 'hierarchy' ? 'open' : ''}`}>
-                        <Link to="#" className="menu-link menu-toggle" onClick={() => toggleMenu('hierarchy')}>
+                    <li className={`menu-item ${openMenu === 'discount' ? 'open' : ''}`}>
+                        <Link to="/discount" className="menu-link menu-toggle" onClick={() => toggleMenu('discount')}>
                             <i className="menu-icon tf-icons bx bx-layout"></i>
-                            <div className="text-truncate" data-i18n="Layouts">Hierarchy</div>
+                            <div className="text-truncate" data-i18n="Layouts">Discount</div>
                         </Link>
                     </li>
-
-                    {/* <!-- PRODUCT MANAGEMENT --> */}
-                    <li className="menu-header small text-uppercase">
-                        <span className="menu-header-text">Product</span>
+                    <li className={`menu-item ${openMenu === 'payment' ? 'open' : ''}`}>
+                        <Link to="/payment" className="menu-link menu-toggle" onClick={() => toggleMenu('payment')}>
+                            <i className="menu-icon tf-icons bx bx-layout"></i>
+                            <div className="text-truncate" data-i18n="Layouts">Payment</div>
+                        </Link>
                     </li>
-
-                    {/* <!-- ORDER  MANAGEMENT --> */}
-                    <li className="menu-header small text-uppercase">
-                        <span className="menu-header-text">ORDER</span>
-                    </li>
-
-                    {/* <!-- CUSTOMER MANAGEMENT --> */}
-                    <li className="menu-header small text-uppercase">
-                        <span className="menu-header-text">CUSTOMER</span>
-                    </li>
-
-                    {/* <!-- DISCOUNT MANAGEMENT --> */}
-                    <li className="menu-header small text-uppercase">
-                        <span className="menu-header-text">DISCOUNT</span>
-                    </li>
-
-                    {/* <!-- INVENTORY MANAGEMENT --> */}
-                    <li className="menu-header small text-uppercase">
-                        <span className="menu-header-text">INVENTORY</span>
+                    <li className={`menu-item ${openMenu === 'order' ? 'open' : ''}`}>
+                        <Link to="/order" className="menu-link menu-toggle" onClick={() => toggleMenu('order')}>
+                            <i className="menu-icon tf-icons bx bx-layout"></i>
+                            <div className="text-truncate" data-i18n="Layouts">Orders</div>
+                        </Link>
                     </li>
 
                     {/* <!-- SUPPORT & FEEDBACK MANAGEMENT --> */}
                     <li className="menu-header small text-uppercase">
                         <span className="menu-header-text">SUPPORT & FEEDBACK</span>
+                    </li>
+                    <li className={`menu-item ${openMenu === 'support' ? 'open' : ''}`}>
+                        <Link to="/support" className="menu-link menu-toggle" onClick={() => toggleMenu('support')}>
+                            <i className="menu-icon tf-icons bx bx-layout"></i>
+                            <div className="text-truncate" data-i18n="Layouts">Support</div>
+                        </Link>
                     </li>
                 </ul>
             </aside >

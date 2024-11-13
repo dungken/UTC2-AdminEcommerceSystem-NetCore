@@ -14,7 +14,7 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({ children }) => {
     };
 
     return (
-        <div className="container-xxl flex-grow-1 container-p-y">
+        <div className="container-xxl flex-grow-1 py-2">
             <div className="row">
                 <div className="col-md-12">
                     <div className="nav-align-top">

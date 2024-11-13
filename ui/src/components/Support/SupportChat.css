@@ -1,0 +1,151 @@
+/* Overall container */
+.chat-container {
+    display: flex;
+    height: 100vh;
+    background-color: #f5f5f5;
+}
+
+/* Sidebar styles */
+.sidebar {
+    width: 300px;
+    background-color: #fff;
+    padding: 20px;
+    border-right: 1px solid #ddd;
+}
+
+.sidebar h2 {
+    margin-top: 0;
+    font-size: 24px;
+    text-align: center;
+}
+
+.chat-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+}
+
+.chat-list li {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.chat-list li:hover {
+    background-color: #f0f0f0;
+}
+
+.chat-list li.active {
+    background-color: #0078d4;
+    color: white;
+}
+
+.chat-item {
+    display: flex;
+    align-items: center;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    background-color: #ccc;
+    border-radius: 50%;
+    margin-right: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.chat-info .chat-name {
+    font-weight: bold;
+}
+
+.chat-info .last-message {
+    font-size: 12px;
+    color: #888;
+}
+
+/* Chat area styles */
+.chat-area {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    background-color: #fff;
+}
+
+.chat-header {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.chat-header h3 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.messages-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    margin-bottom: 20px;
+}
+
+.messages-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.message-bubble {
+    max-width: 70%;
+    padding: 10px;
+    border-radius: 10px;
+    background-color: #e0e0e0;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.sent {
+    align-self: flex-end;
+    background-color: #0078d4;
+    color: white;
+}
+
+.received {
+    align-self: flex-start;
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.chat-input-container {
+    display: flex;
+    align-items: center;
+}
+
+.chat-input {
+    flex-grow: 1;
+    padding: 10px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    font-size: 16px;
+    outline: none;
+}
+
+.send-button {
+    margin-left: 10px;
+    padding: 10px 15px;
+    background-color: #0078d4;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.send-button:hover {
+    background-color: #005fa3;
+}

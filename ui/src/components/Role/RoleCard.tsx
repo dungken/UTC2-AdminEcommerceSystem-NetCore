@@ -1,50 +1,40 @@
-// src/components/Pages/RoleCard.tsx
-import React from 'react';
-// import './RoleCard.css'; // Import any necessary CSS
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Button, Card } from 'react-bootstrap';
+import avatarImage from '../../assets/img/avatars/1.png';
 
 interface RoleCardProps {
-    totalUsers: number;
+    roleId: string;
     roleName: string;
+    totalUser: number;
     avatars: string[];
-    onEditRole: () => void;
+    onEditRole: (roleId: string) => void;
+    onDeleteRole: () => void;
 }
 
-const RoleCard: React.FC<RoleCardProps> = ({ totalUsers, roleName, avatars, onEditRole }) => {
+
+const RoleCard: React.FC<RoleCardProps> = ({ roleId, roleName, totalUser, avatars, onDeleteRole, onEditRole }) => {
     return (
         <div className="col-xl-4 col-lg-6 col-md-6">
-            <div className="card">
-                <div className="card-body">
-                    <div className="d-flex justify-content-between align-items-center mb-4">
-                        <h6 className="fw-normal mb-0 text-body">Total {totalUsers} users</h6>
-                        <ul className="list-unstyled d-flex align-items-center avatar-group mb-0">
-                            {avatars.map((avatar, index) => (
-                                <li
-                                    key={index}
-                                    data-bs-toggle="tooltip"
-                                    data-popup="tooltip-custom"
-                                    data-bs-placement="top"
-                                    className="avatar pull-up"
-                                    aria-label={`Avatar ${index + 1}`}
-                                    data-bs-original-title={`Avatar ${index + 1}`}
-                                >
-                                    <img className="rounded-circle" src={avatar} alt="Avatar" />
-                                </li>
-                            ))}
-                        </ul>
+            <Card className="h-100">
+                <Card.Body>
+                    <h5 className='fw-bold'>{roleName}</h5>
+                    <p>Total Users: {totalUser}</p>
+                    <div className="avatars">
+                        {avatars.map((avatar, index) => (
+                            <img key={index} src={avatar || avatarImage} alt="Avatar" width="30" className="rounded-circle" />
+                        ))}
                     </div>
-                    <div className="d-flex justify-content-between align-items-end">
-                        <div className="role-heading">
-                            <h5 className="mb-1">{roleName}</h5>
-                            <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#addRoleModal" className="role-edit-modal" onClick={onEditRole}>
-                                <span>Edit Role</span>
-                            </a>
-                        </div>
-                        <a href="javascript:void(0);">
-                            <i className="bx bx-copy bx-md text-muted"></i>
-                        </a>
+                    <div className="mt-2">
+                        <Button variant="outline-primary" className="me-2" onClick={() => onEditRole(roleId)}>
+                            Edit
+                        </Button>
+                        <Button variant="outline-danger" onClick={onDeleteRole}>
+                            Delete
+                        </Button>
                     </div>
-                </div>
-            </div>
+                </Card.Body>
+            </Card>
         </div>
     );
 };

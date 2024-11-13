@@ -1,86 +1,298 @@
-using api.Interfaces;
+using System.Threading.Tasks;
+using api.Data;
+using api.Dtos.User;
 using api.Models;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using api.Dtos.Account;
 
 namespace api.Services
 {
     public class UserService : IUserService
     {
-        private readonly IUserRepository _userRepository;
+        private readonly ApplicationDbContext _context;
+        private readonly UserManager<User> _userManager;
+        private readonly RoleManager<Role> _roleManager;
+        private readonly IRoleService _roleService;
 
-        public UserService(IUserRepository userRepository)
+        public UserService(ApplicationDbContext context, UserManager<User> userManager, RoleManager<Role> roleManager, IRoleService roleService)
         {
-            _userRepository = userRepository;
+            _context = context;
+            _userManager = userManager;
+            _roleManager = roleManager;
+            _roleService = roleService;
         }
 
-        public async Task<IdentityResult> AddLoginAsync(AppUser user, UserLoginInfo info)
+        public async Task<bool> CheckUsernameExistsAsync(string username)
         {
-            return await _userRepository.AddLoginAsync(user, info);
+            var user = await _userManager.FindByNameAsync(username);
+            return user != null;
         }
 
-        public async Task<IdentityResult> AddToRoleAsync(AppUser user, string role)
+        public async Task<bool> CheckEmailExistsAsync(string email)
         {
-            return await _userRepository.AddToRoleAsync(user, role);
+            var user = await _userManager.FindByEmailAsync(email);
+            return user != null;
         }
 
-        public async Task<IdentityResult> ChangePasswordAsync(AppUser user, string currentPassword, string newPassword)
+
+        public async Task<ServiceResponse> CreateUserAsync(AddUserDto createUserDto)
         {
-            return await _userRepository.ChangePasswordAsync(user, currentPassword, newPassword);
+            // Implement user creation logic here
+            // Validate and save user to the database
+            // Return appropriate response
+            var user = new User
+            {
+                Email = createUserDto.Email,
+                UserName = createUserDto.UserName,
+                FirstName = createUserDto.FirstName,
+                LastName = createUserDto.LastName,
+                PhoneNumber = createUserDto.PhoneNumber,
+                FullAddress = createUserDto.FullAddress,
+                DateOfBirth = createUserDto.DateOfBirth,
+                Gender = createUserDto.Gender,
+                ProfilePicture = createUserDto.ProfilePicture,
+                ProvinceCode = createUserDto.ProvinceCode,
+                DistrictCode = createUserDto.DistrictCode,
+                CommuneCode = createUserDto.CommuneCode
+            };
+
+            var result = await _userManager.CreateAsync(user, createUserDto.Password);
+            if (!result.Succeeded)
+            {
+                return new ServiceResponse
+                {
+                    Success = false,
+                    Message = "User creation failed: " + string.Join(", ", result.Errors.Select(e => e.Description))
+                };
+            }
+
+            // Assign the default role of "User"
+            var roleResult = await _userManager.AddToRoleAsync(user, "User");
+            if (!roleResult.Succeeded)
+            {
+                return new ServiceResponse
+                {
+                    Success = false,
+                    Message = "Role assignment failed: " + string.Join(", ", roleResult.Errors.Select(e => e.Description))
+                };
+            }
+
+            return new ServiceResponse
+            {
+                Success = true,
+                Message = "User created successfully"
+            };
         }
 
-        public async Task<bool> CheckPasswordAsync(AppUser user, string password)
+        public async Task<bool> DeleteUserAsync(string email)
         {
-            return await _userRepository.CheckPasswordAsync(user, password);
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+                return false;
+
+            var result = await _userManager.DeleteAsync(user);
+            return result.Succeeded;
         }
 
-        public async Task<IdentityResult> CreateAsync(AppUser user, string password)
+        public async Task<User> GetUserByIdAsync(string id)
         {
-            return await _userRepository.CreateAsync(user, password);
+            var user = await _userManager.FindByIdAsync(id);
+            return (user == null || user.IsDeleted) ? user : null;
         }
 
-        public async Task<IdentityResult> CreateAsync(AppUser user)
+        public async Task<bool> SaveUserAsync(UserDto userDto)
         {
-            return await _userRepository.CreateAsync(user);
+            var user = await _userManager.FindByEmailAsync(userDto.Email);
+            if (user != null)
+                return true;
+
+            if (await _context.Users.AnyAsync(u => u.Email == userDto.Email))
+                return false;
+
+            user = new User
+            {
+                Email = userDto.Email.ToString(),
+                UserName = userDto.Email.ToString(),
+                LastName = userDto.LastName.ToString(),
+                FirstName = userDto.FirstName.ToString()
+            };
+
+            Console.WriteLine("Creating user: " + user.Email);
+
+            var result = await _userManager.CreateAsync(user);
+            if (!result.Succeeded)
+            {
+                return false;
+            }
+
+            // Assign the default role of "User"
+            var roleResult = await _userManager.AddToRoleAsync(user, "User");
+            if (!roleResult.Succeeded)
+            {
+                return false;
+            }
+            return true;
         }
 
-        public async Task<AppUser> FindByEmailAsync(string email)
+
+
+        public async Task<List<User>> GetUserAsync()
         {
-            return await _userRepository.FindByEmailAsync(email);
+            return await _userManager.Users
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                        .ThenInclude(r => r.RolePermissions)
+                            .ThenInclude(rp => rp.Permission)
+                .ToListAsync();
         }
 
-        public async Task<AppUser> FindByLoginAsync(string loginProvider, string providerKey)
+        public async Task<User> FindOrCreateUserAsync(string email, string firebaseUid)
         {
-            return await _userRepository.FindByLoginAsync(loginProvider, providerKey);
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                user = new User
+                {
+                    UserName = email,
+                    Email = email
+                    // Add any other properties you need, but omit FirebaseUid
+                };
+
+                var result = await _userManager.CreateAsync(user);
+                if (!result.Succeeded)
+                {
+                    throw new Exception("User creation failed: " + string.Join(", ", result.Errors.Select(e => e.Description)));
+                }
+            }
+
+            return user;
         }
 
-        public async Task<AppUser> FindByUsernameAsync(string username)
+
+        public async Task<IList<Guid>> GetUserRolesAsync(User user)
         {
-            return await _userRepository.FindByUsernameAsync(username);
+            // Get role names associated with the user
+            var roleNames = await _userManager.GetRolesAsync(user);
+
+            // Assuming you have a method to retrieve role GUIDs from role names
+            var roleGuids = new List<Guid>();
+
+            foreach (var roleName in roleNames)
+            {
+                // Lookup each role GUID based on role name
+                var roleGuid = await _roleService.GetRoleIdByNameAsync(roleName);
+                if (roleGuid.HasValue)
+                {
+                    roleGuids.Add(roleGuid.Value);
+                }
+            }
+
+            return roleGuids;
         }
 
-        public async Task<string> GeneratePasswordResetTokenAsync(AppUser user)
+
+        public async Task<bool> AddUserAsync(AddUserDto userDto)
         {
-            return await _userRepository.GeneratePasswordResetTokenAsync(user);
+            var user = new User
+            {
+                Email = userDto.Email,
+                UserName = userDto.UserName,
+                FirstName = userDto.FirstName,
+                LastName = userDto.LastName,
+                PhoneNumber = userDto.PhoneNumber,
+                FullAddress = userDto.FullAddress,
+                DateOfBirth = userDto.DateOfBirth,
+                Gender = userDto.Gender,
+                ProvinceCode = userDto.ProvinceCode,
+                DistrictCode = userDto.DistrictCode,
+                CommuneCode = userDto.CommuneCode
+            };
+
+            var result = await _userManager.CreateAsync(user, userDto.Password);
+            if (!result.Succeeded)
+                return false;
+
+            // Assign the default role of "User"
+            var roleResult = await _userManager.AddToRoleAsync(user, "User");
+            if (!roleResult.Succeeded)
+                return false;
+
+            return true;
         }
 
-        public async Task<IdentityResult> ResetPasswordAsync(AppUser user, string token, string newPassword)
+        public async Task<bool> UpdatePersonalInfoAsync(User user, UpdatePersonalInfoDto updatePersonalInfoDto)
         {
-            return await _userRepository.ResetPasswordAsync(user, token, newPassword);
+            // Check if user exists
+            if (user == null)
+                return false; // or throw an exception, depending on your error handling approach
+
+            // Update the user properties with data from the PersonalInfoDto
+            user.FirstName = updatePersonalInfoDto.FirstName;
+            user.LastName = updatePersonalInfoDto.LastName;
+            user.UserName = updatePersonalInfoDto.UserName;
+            user.PhoneNumber = updatePersonalInfoDto.PhoneNumber;
+            user.ProvinceCode = updatePersonalInfoDto.ProvinceCode;
+            user.DistrictCode = updatePersonalInfoDto.DistrictCode;
+            user.CommuneCode = updatePersonalInfoDto.CommuneCode;
+            user.FullAddress = updatePersonalInfoDto.FullAddress;
+            user.DateOfBirth = updatePersonalInfoDto.DateOfBirth;
+            user.Gender = updatePersonalInfoDto.Gender;
+
+            // Save the changes to the database
+            var result = await _userManager.UpdateAsync(user);
+            return result.Succeeded;
         }
 
-        public async Task<IdentityResult> UpdateAsync(AppUser user)
+        public async Task<bool> SoftDeleteUserAsync(User user)
         {
-            return await _userRepository.UpdateAsync(user);
+            // Check if the user exists
+            if (user == null)
+                return false; // or throw an exception, depending on your error handling approach
+
+            // Soft delete the user by setting the IsDeleted flag to true
+            user.IsDeleted = true;
+
+            await _userManager.UpdateAsync(user); // Mark the entity as modified
+            await _context.SaveChangesAsync(); // Persist changes to the database
+
+            return true;
+        }
+        public async Task<bool> UpdateUserAsync(UpdateUserDto userDto)
+        {
+            Console.WriteLine("User Email: " + userDto.Email);
+            Console.WriteLine("User Gender: " + userDto.Gender);
+
+            // Update user properties
+            User user = await _userManager.FindByEmailAsync(userDto.Email);
+
+            user.UserName = userDto.UserName;
+            user.Email = userDto.Email;
+            user.FirstName = userDto.FirstName;
+            user.LastName = userDto.LastName;
+            user.PhoneNumber = userDto.PhoneNumber;
+            user.Gender = userDto.Gender;
+            user.DateOfBirth = userDto.DateOfBirth;
+            user.ProvinceCode = userDto.ProvinceCode;
+            user.DistrictCode = userDto.DistrictCode;
+            user.CommuneCode = userDto.CommuneCode;
+            user.FullAddress = userDto.FullAddress;
+
+            // Save changes
+            var result = await _userManager.UpdateAsync(user);
+            return result.Succeeded;
         }
 
-        public async Task<IdentityResult> UpdateUserAsync(AppUser user)
+        public async Task<IdentityResult> AssignRoleToUserAsync(Guid userId, Guid roleId)
         {
-            return await _userRepository.UpdateUserAsync(user);
-        }
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            var role = await _roleManager.FindByIdAsync(roleId.ToString());
 
-        public async Task<bool> VerifyTwoFactorTokenAsync(AppUser user, string tokenProvider, string token)
-        {
-            return await _userRepository.VerifyTwoFactorTokenAsync(user, tokenProvider, token);
+            if (user == null || role == null)
+                throw new ArgumentException("User or Role not found.");
+
+            return await _userManager.AddToRoleAsync(user, role.Name);
         }
     }
 }

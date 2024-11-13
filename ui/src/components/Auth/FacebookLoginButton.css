@@ -1,0 +1,30 @@
+.facebook-login-button {
+   display: flex; /* Use flexbox for alignment */
+   justify-content: center; /* Center the content */
+}
+
+.btn-facebook {
+   background-color: #ffffff;
+   color: #484043;
+   border: 1px solid #dcd5d5ee;
+   border-radius: 4px;
+   font-size: 15.5px;
+   cursor: pointer;
+   display: flex;
+   align-items: center;
+   transition: background-color 0.3s;
+   margin: 1px;
+   padding: 9px;
+   width: 100%;
+}
+
+.btn-facebook:hover {
+   /* background-color: #bec6da; Darker color on hover */
+   border: 1px solid #97c0d8ee;
+}
+
+.facebook-logo {
+   margin-right: 10px; /* Space between logo and text */
+   width: 20px; /* Set width for the logo */
+   height: 20px; /* Set height for the logo */
+}

@@ -1,99 +1,122 @@
-// src/components/Pages/RoleList.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import RoleCard from './RoleCard';
 import RoleModal from './RoleModal';
-import RoleTable from './RoleTable';
-// import './RoleList.css'; // Import any necessary CSS
+import { Button } from 'react-bootstrap';
+import { toast } from 'react-toastify';
+import roleImage from '../../assets/img/logo/role-permission.png';
+
 
 const RoleList: React.FC = () => {
-    const [roles, setRoles] = useState([
-        {
-            totalUsers: 4,
-            roleName: 'Administrator',
-            avatars: [
-                '../../assets/img/avatars/5.png',
-                '../../assets/img/avatars/12.png',
-                '../../assets/img/avatars/6.png',
-                '../../assets/img/avatars/3.png',
-            ],
-        },
-        {
-            totalUsers: 7,
-            roleName: 'Manager',
-            avatars: [
-                '../../assets/img/avatars/4.png',
-                '../../assets/img/avatars/1.png',
-                '../../assets/img/avatars/2.png',
-                '../../assets/img/avatars/4.png',
-            ],
-        },
-        // Add more roles as needed
-    ]);
+    const [showRoleModal, setShowRoleModal] = useState(false);
+    const [selectedRole, setSelectedRole] = useState<any>(null); // To store the selected role data
+    const [roles, setRoles] = useState<{ id: string; name: string; totalUser: number; avatars: string[]; permissions: string[] }[]>([]);
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const handleEditRole = () => {
-        setIsModalOpen(true);
+    useEffect(() => {
+        fetchRoles();
+    }, []);
+
+    const fetchRoles = async () => {
+        try {
+            const response = await axios.get('/Role/GetAll');
+            console.log(response.data);
+
+            setRoles(response.data);
+        } catch (error) {
+            console.error('Error fetching roles:', error);
+        }
+    };
+
+    const handleEditRole = (roleId: string) => {
+        const role = roles.find((role) => role.id === roleId); // Find the role by its ID
+        setSelectedRole(role); // Set the selected role data
+        setShowRoleModal(true); // Show the modal
     };
 
     const handleCloseModal = () => {
-        setIsModalOpen(false);
+        setShowRoleModal(false);
+        fetchRoles(); // Refresh the roles list
+        setSelectedRole(null); // Reset selected role
     };
 
+    const handleSaveRole = async (role: any) => {
+        try {
+            await axios.post('/Role/CreateOrUpdate', role);
+            fetchRoles(); // Refresh the roles list
+            handleCloseModal(); // Close the modal
+        } catch (error) {
+            console.error('Error saving role:', error);
+        }
+    };
+
+    const handleDeleteRole = async (roleId: string) => {
+        if (window.confirm('Are you sure you want to delete this role?')) {
+            try {
+                await axios.delete(`/Role/Delete/${roleId}`);
+                fetchRoles(); // Refresh the roles list after deletion
+                toast.success('Role deleted successfully!');
+            } catch (error) {
+                console.error('Error deleting role:', error);
+                toast.error('Error deleting role.');
+            }
+        }
+    };
+
+
     return (
-        <div className="container-xxl flex-grow-1 container-p-y">
-            <h4 className="mb-1">Roles List</h4>
-            <p className="mb-6">
-                A role provided access to predefined menus and features so that depending on assigned role an administrator can have access to what user needs.
-            </p>
-            <div className="row g-6">
-                {roles.map((role, index) => (
-                    <RoleCard
-                        key={index}
-                        totalUsers={role.totalUsers}
-                        roleName={role.roleName}
-                        avatars={role.avatars}
-                        onEditRole={handleEditRole}
-                    />
-                ))}
+        <div className="container-xxl flex-grow-1 py-2 ">
+            <div className="row g-4">
                 <div className="col-xl-4 col-lg-6 col-md-6">
                     <div className="card h-100">
-                        <div className="row h-100">
+                        <div className="row h-100 d-flex align-items-center">
                             <div className="col-sm-5">
-                                <div className="d-flex align-items-end h-100 justify-content-center mt-sm-0 mt-4 ps-6">
+                                <div className="d-flex align-items-center h-100 justify-content-center mt-sm-0 mt-4 ps-6">
                                     <img
-                                        src="../../assets/img/illustrations/lady-with-laptop-light.png"
+                                        src={roleImage}
                                         className="img-fluid"
                                         alt="Image"
-                                        width="120"
-                                        data-app-light-img="illustrations/lady-with-laptop-light.png"
-                                        data-app-dark-img="illustrations/lady-with-laptop-dark.png"
+                                        width="100"
                                     />
                                 </div>
                             </div>
-                            <div className="col-sm-7">
-                                <div className="card-body text-sm-end text-center ps-sm-0">
-                                    <button
-                                        data-bs-target="#addRoleModal"
-                                        data-bs-toggle="modal"
-                                        className="btn btn-sm btn-primary mb-4 text-nowrap add-new-role"
-                                        onClick={handleEditRole}
+                            <div className="col-sm-7 d-flex ">
+                                <div className="card-body align-items-center text-sm text-center ps-sm-0">
+                                    <Button
+                                        variant="primary"
+                                        className="btn-lg text-nowrap add-new-role"
+                                        onClick={() => {
+                                            setSelectedRole(null); // Reset selected role for new role creation
+                                            setShowRoleModal(true); // Show modal for adding new roles
+                                        }}
                                     >
                                         Add New Role
-                                    </button>
-                                    <p className="mb-0"> Add new role, <br /> if it doesn't exist.</p>
+                                    </Button>
+                                    {/* <p className="m-2">Add a new role if it doesn't exist.</p> */}
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+                {roles.map((role, index) => (
+                    <RoleCard
+                        key={index}
+                        roleId={role.id}
+                        roleName={role.name}
+                        totalUser={role.totalUser}
+                        avatars={role.avatars}
+                        onEditRole={() => handleEditRole(role.id)} // Pass the specific roleId to the handler
+                        onDeleteRole={() => handleDeleteRole(role.id)}
+                    />
+                ))}
+
             </div>
-            <div className="col-12">
-                <h4 className="mt-6 mb-1">Total users with their roles</h4>
-                <p className="mb-0">Find all of your company’s administrator accounts and their associate roles.</p>
-            </div>
-            <RoleTable />
-            <RoleModal isOpen={isModalOpen} onClose={handleCloseModal} />
+            <RoleModal
+                show={showRoleModal}
+                handleClose={handleCloseModal}
+                role={selectedRole} // Pass the selected role data to the modal
+                onSaveRole={handleSaveRole} // Pass the save handler to the modal
+            />
         </div>
     );
 };
