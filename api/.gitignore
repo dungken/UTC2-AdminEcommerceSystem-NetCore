@@ -1,8 +1,8 @@
 # .NET Core
 bin/
 obj/
-api/obj/
-api/bin/
+obj/
+bin/
 *.user
 *.rsuser
 *.suo

@@ -3,9 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+<<<<<<< HEAD
     "@greatsumini/react-facebook-login": "^3.3.3",
     "@microsoft/signalr": "^8.0.7",
     "@react-oauth/google": "^0.12.1",
+=======
+>>>>>>> e4a64d3ccba873ba0aad0e553c7600aa5c07e48c
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
@@ -13,6 +16,7 @@
     "@types/node": "^16.18.114",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
+<<<<<<< HEAD
     "axios": "^1.7.7",
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "^1.11.3",
@@ -34,6 +38,11 @@
     "react-toastify": "^10.0.6",
     "socket.io": "^4.8.1",
     "styled-components": "^6.1.13",
+=======
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-scripts": "5.0.1",
+>>>>>>> e4a64d3ccba873ba0aad0e553c7600aa5c07e48c
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4"
   },
@@ -60,8 +69,11 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+<<<<<<< HEAD
   },
   "devDependencies": {
     "@types/file-saver": "^2.0.7"
+=======
+>>>>>>> e4a64d3ccba873ba0aad0e553c7600aa5c07e48c
   }
 }

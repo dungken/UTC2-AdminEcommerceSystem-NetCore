@@ -46,6 +46,7 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+<<<<<<< HEAD
             "AutoMapper": {
               "target": "Package",
               "version": "[12.0.0, )"
@@ -89,6 +90,11 @@
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
               "target": "Package",
               "version": "[8.0.10, )"
+=======
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+>>>>>>> e4a64d3ccba873ba0aad0e553c7600aa5c07e48c
             },
             "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
               "target": "Package",
@@ -126,6 +132,7 @@
               "target": "Package",
               "version": "[13.0.3, )"
             },
+<<<<<<< HEAD
             "OtpSharp": {
               "target": "Package",
               "version": "[1.3.0.4, )"
@@ -157,6 +164,11 @@
             "ZXing.Net.Bindings.Windows.Compatibility": {
               "target": "Package",
               "version": "[0.16.12, )"
+=======
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[6.4.0, )"
+>>>>>>> e4a64d3ccba873ba0aad0e553c7600aa5c07e48c
             }
           },
           "imports": [
@@ -178,7 +190,11 @@
               "privateAssets": "all"
             }
           },
+<<<<<<< HEAD
           "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.403/PortableRuntimeIdentifierGraph.json"
+=======
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.400/PortableRuntimeIdentifierGraph.json"
+>>>>>>> e4a64d3ccba873ba0aad0e553c7600aa5c07e48c
         }
       }
     }
