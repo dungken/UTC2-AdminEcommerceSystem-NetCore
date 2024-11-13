@@ -1,11 +1,14 @@
 # .NET Core
 bin/
 obj/
+api/obj/
+api/bin/
 *.user
 *.rsuser
 *.suo
 *.userosscache
 *.sln.docstates
+.appsettings.json
 
 # Visual Studio Code
 .vscode/
