@@ -1,6 +1,4 @@
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using api.Services;
 using api.Dtos.User;
 using System.Text;
@@ -9,11 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using System.Net;
-using api.Dtos.Account;
 using api.Models;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.ComponentModel.DataAnnotations.Schema;
 using OfficeOpenXml;
 using api.Dtos.Role;
 using Microsoft.EntityFrameworkCore;
@@ -30,14 +24,23 @@ namespace api.Controllers
         private readonly Cloudinary _cloudinary;
         private readonly IJwtService _jwtService;
         private readonly ILogger<UserController> _logger;
+        private readonly IBaseReponseService _baseReponseService;
 
-        public UserController(IUserService Userervice, IConfiguration configuration, UserManager<User> userManager, IJwtService jwtService, ILogger<UserController> logger)
+        public UserController(
+            IUserService Userervice,
+            IConfiguration configuration,
+            UserManager<User> userManager,
+            IJwtService jwtService,
+            ILogger<UserController> logger,
+            IBaseReponseService baseReponseService
+        )
         {
             _userService = Userervice;
             _configuration = configuration;
             _userManager = userManager;
             _jwtService = jwtService;
             _logger = logger;
+            _baseReponseService = baseReponseService;
 
             var cloudName = configuration["Cloudinary:CloudName"];
             var apiKey = configuration["Cloudinary:ApiKey"];
@@ -47,24 +50,24 @@ namespace api.Controllers
             _cloudinary = new Cloudinary(acc);
         }
 
+
+
+        /////////////////////// api/User/GenerateSignature ///////////////////////
         [HttpPost("GenerateSignature")]
         public async Task<IActionResult> GenerateSignature([FromBody] Dictionary<string, string> parameters)
         {
             try
             {
                 if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+                {
+                    return BadRequest(_baseReponseService.CreateModelStateErrorResponse("Invalid parameters.", ModelState));
+                }
 
-                var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                // _logger.LogInformation("Token: " + token);
-                var userName = _jwtService.GetUserNameFromToken(token);
-                if (userName == null)
-                    return Unauthorized(new { Message = "Invalid token or username claim not found." });
-
-                var user = await _userManager.FindByNameAsync(userName);
+                var user = await _jwtService.GetUserFromTokenAsync();
                 if (user == null)
-                    return NotFound(new { Message = "User not found." });
-
+                {
+                    return Unauthorized(_baseReponseService.CreateErrorResponse<object>("Invalid token or username claim not found."));
+                }
 
                 var cloudName = _configuration["Cloudinary:CloudName"];
                 var apiKey = _configuration["Cloudinary:ApiKey"];
@@ -94,45 +97,51 @@ namespace api.Controllers
                     var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(signString.ToString()));
                     var signature = BitConverter.ToString(hash).Replace("-", "").ToLower();
 
-                    // _logger.LogInformation("Signature: " + signature);
-                    // _logger.LogInformation("API Key: " + apiKey);
-                    // _logger.LogInformation("Cloud Name: " + cloudName);
+                    _logger.LogInformation("Signature: " + signature);
+                    _logger.LogInformation("API Key: " + apiKey);
+                    _logger.LogInformation("Cloud Name: " + cloudName);
 
-                    return Ok(new
-                    {
-                        signature,
-                        apiKey,
-                        cloudName
-                    });
+                    return Ok(new { Signature = signature, ApiKey = apiKey, CloudName = cloudName });
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error: " + ex.Message);
+                _logger.LogError(ex, "An error occurred while generating signature.");
                 return StatusCode(500, new { Message = "Internal server error." });
             }
         }
 
+
+
+        /////////////////////// api/User/UploadImage ///////////////////////
         [HttpPost("UploadImage")]
         public async Task<IActionResult> UploadImage([FromForm] IFormFile file, [FromForm] string? username = null)
         {
-            // Kiểm tra nếu có username thì tìm user theo username, nếu không lấy user hiện tại từ token
-            var user = username != null
-                ? await _userManager.FindByNameAsync(username)
-                : await GetUserFromTokenAsync();
+            // Get the user by username if provided, otherwise get the current logged-in user
+            var user = username != null ? await _userManager.FindByNameAsync(username) : await _jwtService.GetUserFromTokenAsync();
 
+            // Check if the user is found
             if (user == null)
-                return NotFound(CreateErrorResponse("User not found or invalid token."));
+            {
+                return Unauthorized(_baseReponseService.CreateErrorResponse<object>("Invalid token or username claim not found."));
+            }
 
+            // Check if the file is empty
             if (file == null || file.Length == 0)
-                return BadRequest(CreateErrorResponse("No file selected."));
+            {
+                return BadRequest(_baseReponseService.CreateErrorResponse<object>("File is empty."));
+            }
 
-            if (file.Length > 5 * 1024 * 1024) // Giới hạn kích thước file 5 MB
-                return BadRequest(CreateErrorResponse("File size exceeds the limit."));
+            // Check if the file size exceeds the limit
+            if (file.Length > 5 * 1024 * 1024)
+            {
+                return BadRequest(_baseReponseService.CreateErrorResponse<object>("File size exceeds the limit."));
+            }
 
+            // Check if the file is an image
             try
             {
-                // Upload ảnh lên cloud storage
+                // Upload image to Cloudinary
                 var uploadParams = new ImageUploadParams
                 {
                     File = new FileDescription(file.FileName, file.OpenReadStream()),
@@ -143,7 +152,7 @@ namespace api.Controllers
 
                 if (uploadResult.StatusCode == HttpStatusCode.OK)
                 {
-                    // Cập nhật URL ảnh đại diện của user trong database
+                    // Update the user's profile picture
                     user.ProfilePicture = uploadResult.SecureUrl.AbsoluteUri;
                     await _userManager.UpdateAsync(user);
 
@@ -152,100 +161,304 @@ namespace api.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "An error occurred while uploading image.");
                 return StatusCode(500, new { Message = "An error occurred during upload." });
             }
 
-            return BadRequest(CreateErrorResponse("Failed to upload image."));
+            return BadRequest(_baseReponseService.CreateErrorResponse<object>("Failed to upload image."));
         }
 
 
 
+        /////////////////////// api/User/Get/{id} ///////////////////////
+        [HttpGet("Get/{id}")]
+        public async Task<IActionResult> Get(string id)
+        {
+            _logger.LogInformation($"Get User Request ID: {id}");
+            var user = await _userService.GetUserByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound(_baseReponseService.CreateErrorResponse<object>("User not found."));
+            }
+
+            // Get the roles assigned to the user
+            var roles = await _userManager.GetRolesAsync(user);
+
+            // Get the permissions for each role
+            var permissions = new List<string>();
+            foreach (var role in roles)
+            {
+                var rolePermissions = await _userService.GetPermissionsForRoleAsync(role);
+                permissions.AddRange(rolePermissions);
+            }
+
+            return Ok(_baseReponseService.CreateSuccessResponse(
+                new
+                {
+                    User = user,
+                    Roles = roles,
+                    Permissions = permissions
+                },
+                "User retrieved successfully."
+            ));
+        }
+
+
+
+        /////////////////////// api/User/GetAll ///////////////////////
+        [HttpGet("GetAll")]
+        public async Task<IActionResult> GetAll(int page = 1, int pageSize = 10)
+        {
+            var user = _jwtService.GetUserRolesAndPermissionsFromToken();
+            if (user.UserId == null)
+            {
+                return Unauthorized(_baseReponseService.CreateErrorResponse<object>("Invalid token or username claim not found."));
+            }
+
+            // Truy vấn lấy tất cả người dùng chưa bị xóa, bao gồm UserRoles và RolePermissions cho mỗi User
+            var query = _userManager.Users
+                .Where(u => !u.IsDeleted)
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                        .ThenInclude(r => r.RolePermissions)
+                            .ThenInclude(rp => rp.Permission)
+                .Include(u => u.UserRoles) // Bao gồm UserRoles để lấy thông tin Role của người dùng
+                .ThenInclude(ur => ur.Role) // Liên kết với Role
+                .ThenInclude(r => r.RolePermissions) // Liên kết với RolePermissions
+                .ThenInclude(rp => rp.Permission); // Liên kết với Permission
+
+            // Lấy số lượng người dùng tổng để tính toán phân trang
+            var totalUser = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalUser / (double)pageSize);
+
+            // Áp dụng phân trang
+            var users = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+            // Creating the response with pagination info and list of users with roles and permissions
+            var response = new
+            {
+                TotalUser = totalUser,
+                TotalPages = totalPages,
+                CurrentPage = page,
+                PageSize = pageSize,
+                Users = users.Select(u => new
+                {
+                    u.Id,
+                    u.FirstName,
+                    u.LastName,
+                    // Including UserRoles and RolePermissions for each user
+                    UserRoles = u.UserRoles.Select(ur => new
+                    {
+                        ur.Role.Id,
+                        ur.Role.Name,
+                        Permissions = ur.Role.RolePermissions.Select(rp => new
+                        {
+                            rp.Permission.PermissionId,
+                            rp.Permission.Name,
+                            rp.Permission.Description
+                        }).ToList()
+                    }).ToList()
+                }).ToList()
+            };
+
+            return Ok(_baseReponseService.CreateSuccessResponse(response, "Users retrieved successfully."));
+
+        }
+
+
+        /////////////////////// api/User/Create ///////////////////////
         [HttpPost("Create")]
         public async Task<IActionResult> CreateUser([FromBody] AddUserDto userDto)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            {
+                return BadRequest(_baseReponseService.CreateModelStateErrorResponse("Invalid parameters.", ModelState));
+            }
 
-            var user = await GetUserFromTokenAsync();
+            // Get the current logged-in user
+            var user = await _jwtService.GetUserFromTokenAsync();
             if (user == null)
-                return Unauthorized(CreateErrorResponse("Invalid token or username claim not found."));
+            {
+                return Unauthorized(_baseReponseService.CreateErrorResponse<object>("Invalid token or username claim not found."));
+            }
 
             var result = await _userService.AddUserAsync(userDto);
-            if (result)
-                return Ok(new { Status = "success", Message = "User created successfully." });
+            if (!result)
+            {
+                return BadRequest(_baseReponseService.CreateErrorResponse<object>("Failed to create user."));
+            }
 
-            return BadRequest(CreateErrorResponse("Failed to create user."));
+            return Ok(_baseReponseService.CreateSuccessResponse(
+                new { User = userDto },
+                "User created successfully."
+            ));
         }
 
-        // Get personal information currently logged in user
+
+
+        /////////////////////// api/User/Update ///////////////////////
+        [HttpPost("Update")]
+        public async Task<IActionResult> UpdateUser(UpdateUserDto updateUserDto)
+        {
+            // _logger.LogInformation($"Update User Request Body: {JsonConvert.SerializeObject(updateUserDto)}");
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(_baseReponseService.CreateModelStateErrorResponse("Invalid parameters.", ModelState));
+            }
+
+            var user = await _userManager.FindByIdAsync(updateUserDto.Id);
+            if (user == null)
+            {
+                return NotFound(_baseReponseService.CreateErrorResponse<object>("User not found."));
+            }
+
+            var isExistingEmail = await _userService.CheckEmailExistsAsync(updateUserDto.Email);
+            var isExistingUsername = await _userService.CheckUsernameExistsAsync(updateUserDto.UserName);
+
+            if ((isExistingEmail && user.Email != updateUserDto.Email) ||
+                (isExistingUsername && user.UserName != updateUserDto.UserName))
+            {
+                return BadRequest(_baseReponseService.CreateErrorResponse<object>("Username or email already exists."));
+            }
+
+            var result = await _userService.UpdateUserAsync(user, updateUserDto);
+            if (!result)
+            {
+                return BadRequest(_baseReponseService.CreateErrorResponse<object>("Failed to update user."));
+            }
+
+            return Ok(_baseReponseService.CreateSuccessResponse(
+                new { User = user },
+                "User updated successfully."
+            ));
+        }
+
+
+        /////////////////////// api/User/GetPersonalInfo ///////////////////////
         [HttpGet("GetPersonalInfo")]
         public async Task<IActionResult> GetPersonalInfo()
         {
-            var user = await GetUserFromTokenAsync();
-            if (user == null)
-                return Unauthorized(CreateErrorResponse("Invalid token or username claim not found."));
-
-            return Ok(new
+            var responseFromToken = _jwtService.GetUserRolesAndPermissionsFromToken();
+            if (responseFromToken.UserId == null)
             {
-                data = new
+                return Unauthorized(_baseReponseService.CreateErrorResponse<object>("Invalid token or username claim not found."));
+            }
+
+            return Ok(_baseReponseService.CreateSuccessResponse(
+                new
                 {
-                    User = user
+                    UserId = responseFromToken.UserId,
+                    UserName = responseFromToken.UserName,
+                    Roles = responseFromToken.Roles,
+                    Permissions = responseFromToken.Permissions,
                 },
-                Status = "success",
-                Message = "Personal information retrieved successfully."
-            });
+                "Personal information retrieved successfully."
+            ));
         }
 
-        // Update personal information currently logged in user
-        [HttpPut("UpdatePersonalInfo")]
+
+
+        /////////////////////// api/User/UpdatePersonalInfo ///////////////////////
+        [HttpPost("UpdatePersonalInfo")]
         public async Task<IActionResult> UpdatePersonalInfo([FromBody] UpdatePersonalInfoDto personalInfoDto)
         {
+            _logger.LogInformation("Updating personal information.");
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            {
+                _logger.LogInformation("Invalid parameters.");
+                return BadRequest(_baseReponseService.CreateModelStateErrorResponse("Invalid parameters.", ModelState));
+            }
 
-            var user = await GetUserFromTokenAsync();
-            if (user == null)
-                return Unauthorized(CreateErrorResponse("Invalid token or username claim not found."));
+            var userFromToken = _jwtService.GetUserRolesAndPermissionsFromToken();
+            if (userFromToken.UserName == null)
+            {
+                return Unauthorized(_baseReponseService.CreateErrorResponse<object>("Invalid token or username claim not found."));
+            }
 
-            var result = await _userService.UpdatePersonalInfoAsync(user, personalInfoDto);
-            if (result)
-                return Ok(CreateSuccessResponse("Personal information updated successfully."));
+            var userUpdating = await _userManager.FindByNameAsync(userFromToken.UserName);
 
-            return BadRequest(CreateErrorResponse("Failed to update personal information."));
+            var result = await _userService.UpdatePersonalInfoAsync(userUpdating, personalInfoDto);
+            if (!result)
+            {
+                return BadRequest(_baseReponseService.CreateErrorResponse<object>("Failed to update personal information."));
+            }
+
+            return Ok(_baseReponseService.CreateSuccessResponse(
+                new { User = personalInfoDto },
+                "Personal information updated successfully."
+            ));
         }
 
+
+
+        /////////////////////// api/User/DeleteAccount ///////////////////////
         [HttpPost("DeleteAccount")]
-        public async Task<IActionResult> DeleteAccount(string username = null)
+        public async Task<IActionResult> DeleteAccount()
         {
-            Console.WriteLine("Username: " + username);
-            User user;
-
-
-            if (!string.IsNullOrEmpty(username))
+            var userFromToken = _jwtService.GetUserRolesAndPermissionsFromToken();
+            if (userFromToken.UserName == null)
             {
-                // Find the user by the provided username
-                user = await _userManager.FindByNameAsync(username);
-                if (user == null)
-                    return NotFound(CreateErrorResponse("User not found."));
-            }
-            else
-            {
-                // Get the current logged-in user
-                user = await GetUserFromTokenAsync();
-                if (user == null)
-                    return Unauthorized(CreateErrorResponse("Invalid token or username claim not found."));
+                return Unauthorized(_baseReponseService.CreateErrorResponse<object>("Invalid token or username claim not found."));
             }
 
+            var user = await _userManager.FindByNameAsync(userFromToken.UserName);
+            if (user == null)
+            {
+                return NotFound(_baseReponseService.CreateErrorResponse<object>("User not found."));
+            }
             // Attempt to soft delete the user
             var result = await _userService.SoftDeleteUserAsync(user);
-            Console.WriteLine("Result: " + user.IsDeleted);
 
-            if (result)
-                return Ok(new { status = 200, message = "Account deleted successfully." });
+            if (!result)
+            {
+                return BadRequest(_baseReponseService.CreateErrorResponse<object>("Failed to delete account."));
+            }
 
-            return BadRequest(CreateErrorResponse("Failed to delete account."));
+            return Ok(_baseReponseService.CreateSuccessResponse(
+                new { User = user },
+                "Account deleted successfully."
+            ));
         }
 
+
+        /////////////////////// api/User/Restore ///////////////////////
+        [HttpPost("Restore")]
+        public async Task<IActionResult> Restore(RestoreUserDto restoreUserDto)
+        {
+            // _logger.LogInformation("Restoring user.");
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(_baseReponseService.CreateModelStateErrorResponse("Invalid parameters.", ModelState));
+            }
+
+            // Find the user by email and check if they are marked as deleted
+            var user = await _userManager.Users
+                .IgnoreQueryFilters()
+                .Where(u => u.Email == restoreUserDto.Email && u.IsDeleted == true)
+                .FirstOrDefaultAsync();
+
+            if (user == null)
+            {
+                return NotFound(_baseReponseService.CreateErrorResponse<object>("User not found."));
+            }
+
+            var result = await _userService.Restore(user);
+            if (!result)
+            {
+                return BadRequest(_baseReponseService.CreateErrorResponse<object>("Failed to restore user."));
+            }
+
+            return Ok(_baseReponseService.CreateSuccessResponse(
+                new { User = user },
+                "User restored successfully."
+            ));
+        }
+
+
+
+        /////////////////////// api/User/Export/Excel ///////////////////////
         [HttpGet("Export/Excel")]
         public async Task<IActionResult> ExportUserToExcel()
         {
@@ -280,51 +493,9 @@ namespace api.Controllers
             }
         }
 
-        [HttpPut("Update")]
-        public async Task<IActionResult> UpdateUser([FromBody] UpdateUserDto userDto)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var user = await GetUserFromTokenAsync();
-            if (user == null)
-                return Unauthorized(CreateErrorResponse("Invalid token or username claim not found."));
-
-            var result = await _userService.UpdateUserAsync(userDto);
-            if (result)
-                return Ok(CreateSuccessResponse("User updated successfully."));
-
-            return BadRequest(CreateErrorResponse("Failed to update user."));
-        }
-
-        private object CreateSuccessResponse(string message) => Ok(new { status = "success", message });
-
-        private object CreateErrorResponse(string message, IEnumerable<IdentityError> errors = null)
-        => new
-        {
-            status = "error",
-            message,
-            errors = errors?.Select(e => e.Description) ?? null
-        };
-
-        private async Task<User> GetUserFromTokenAsync()
-        {
-            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-            var userName = _jwtService.GetUserNameFromToken(token);
-            return userName != null ? await _userManager.FindByNameAsync(userName) : null;
-        }
-
-        [HttpGet("Get/{id}")]
-        public async Task<IActionResult> GetUser(string id)
-        {
-            var user = await _userService.GetUserByIdAsync(id);
-            if (user == null)
-                return NotFound(new { Message = "User not found." });
-
-            return Ok(user);
-        }
 
 
+        /////////////////////// api/User/CheckUsernameEmail ///////////////////////
         [HttpGet("CheckUsernameEmail")]
         public async Task<IActionResult> CheckUsernameEmail(string username, string email)
         {
@@ -334,87 +505,22 @@ namespace api.Controllers
             return Ok(new { UsernameExists = usernameExists, EmailExists = emailExists });
         }
 
-        [HttpGet("GetAllUser")]
-        public async Task<IActionResult> GetAllUser(int page = 1, int pageSize = 10)
-        {
-            var user = await GetUserFromTokenAsync();
-            if (user == null)
-                return Unauthorized(CreateErrorResponse("Invalid token or username claim not found."));
-
-            // Truy vấn lấy tất cả người dùng chưa bị xóa, bao gồm UserRoles và RolePermissions cho mỗi User
-            var query = _userManager.Users
-                .Where(u => !u.IsDeleted)
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
-                        .ThenInclude(r => r.RolePermissions)
-                            .ThenInclude(rp => rp.Permission)
-                .Include(u => u.UserRoles) // Bao gồm UserRoles để lấy thông tin Role của người dùng
-                .ThenInclude(ur => ur.Role) // Liên kết với Role
-                .ThenInclude(r => r.RolePermissions) // Liên kết với RolePermissions
-                .ThenInclude(rp => rp.Permission); // Liên kết với Permission
-
-            // Lấy số lượng người dùng tổng để tính toán phân trang
-            var totalUser = await query.CountAsync();
-            var totalPages = (int)Math.Ceiling(totalUser / (double)pageSize);
-
-            // Áp dụng phân trang
-            var users = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            // Tạo response với thông tin phân trang và danh sách người dùng
-            var response = new
-            {
-                TotalUser = totalUser,
-                TotalPages = totalPages,
-                CurrentPage = page,
-                PageSize = pageSize,
-                Users = users.Select(u => new
-                {
-                    u.Id,
-                    u.FirstName,
-                    u.LastName,
-                    // Thêm thông tin UserRoles và RolePermissions cho mỗi người dùng
-                    UserRoles = u.UserRoles.Select(ur => new
-                    {
-                        ur.Role.Id,
-                        ur.Role.Name,
-                        // Lấy các Permission của Role này
-                        Permissions = ur.Role.RolePermissions
-                            .Select(rp => new
-                            {
-                                rp.Permission.PermissionId,
-                                rp.Permission.Name,
-                                rp.Permission.Description
-                            }).ToList()
-                    }).ToList()
-                })
-            };
-
-            return Ok(response);
-        }
 
 
-
-
+        /////////////////////// api/User/AssignRoleToUser ///////////////////////
         [HttpPost("AssignRoleToUser")]
         public async Task<IActionResult> AssignRoleToUser([FromBody] AssignRoleToUserRequest request)
         {
-            try
+            var result = await _userService.AssignRoleToUserAsync(request.UserId, request.RoleId);
+            if (!result.Succeeded)
             {
-                var result = await _userService.AssignRoleToUserAsync(request.UserId, request.RoleId);
-                if (result.Succeeded)
-                {
-                    return Ok();
-                }
-            }
-            catch (Exception ex)
-            {
-                return NotFound(ex.Message);
+                return BadRequest(_baseReponseService.CreateErrorResponse<object>("Failed to assign role to user."));
             }
 
-            return BadRequest("Error assigning role.");
+            return Ok(_baseReponseService.CreateSuccessResponse(
+                new { UserId = request.UserId, RoleId = request.RoleId },
+                "Role assigned to user successfully."
+            ));
         }
     }
 }

@@ -14,13 +14,9 @@ namespace api.Services
         // Phương thức đồng bộ tạo JWT token cho user mà không có roles và permissions
         // string GenerateJwtToken(User user);
 
-        // Phương thức bất đồng bộ để tạo JWT token với roles và permissions
         Task<string> GenerateJwtTokenAsync(User user, IList<Guid> roles, IList<Guid> permissions);
-
-        // Phương thức để lấy tên người dùng từ token
-        string GetUserNameFromToken(string token);
-
-        // Phương thức để ghi lại thông tin của người dùng từ token (Log)
+        Task<User> GetUserFromTokenAsync();
+        (string UserId, string UserName, List<Guid> Roles, List<Guid> Permissions) GetUserRolesAndPermissionsFromToken();
         void LogCurrentUser(string token);
     }
 }

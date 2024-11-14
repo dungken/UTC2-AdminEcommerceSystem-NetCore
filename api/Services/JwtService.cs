@@ -6,9 +6,19 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using api.Models;
+using Azure.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using System.ComponentModel.DataAnnotations;
+using System.Web;
+using api.Dtos.Account;
+using api.Models;
+using api.Services;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Google.Apis.Auth;
+using api.Utils;
 
 namespace api.Services
 {
@@ -17,12 +27,22 @@ namespace api.Services
         private readonly IConfiguration _configuration;
         private readonly ILogger<JwtService> _logger;
         private readonly JwtSettings _jwtSettings;
+        private readonly UserManager<User> _userManager;
 
-        public JwtService(IConfiguration configuration, ILogger<JwtService> logger)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public JwtService(
+            IConfiguration configuration,
+            ILogger<JwtService> logger,
+            IHttpContextAccessor httpContextAccessor,
+            UserManager<User> userManager
+        )
         {
             _configuration = configuration;
             _logger = logger;
             _jwtSettings = _configuration.GetSection("JwtSettings").Get<JwtSettings>();
+            _httpContextAccessor = httpContextAccessor;
+            _userManager = userManager;
         }
 
         public string GenerateJwtToken(User user, IList<Guid> roles = null, IList<Guid> permissions = null)
@@ -61,20 +81,23 @@ namespace api.Services
                 signingCredentials: creds
             );
 
+            _logger.LogInformation($"Token {token}.");
+
             // Return the token as a string
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-
-
-        // public string GenerateJwtToken(User user, IList<string> roles = null, IList<string> permissions = null)
-        // {
-        //     return GenerateJwtToken(user, roles, permissions);
-        // }
 
         // Asynchronous method for token generation
         public async Task<string> GenerateJwtTokenAsync(User user, IList<Guid> roles, IList<Guid> permissions)
         {
             return await Task.FromResult(GenerateJwtToken(user, roles, permissions));
+        }
+
+        public async Task<User> GetUserFromTokenAsync()
+        {
+            var token = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var userName = GetUserNameFromToken(token);
+            return userName != null ? await _userManager.FindByNameAsync(userName) : null;
         }
 
         // Get user name from JWT token
@@ -100,6 +123,41 @@ namespace api.Services
             }
 
             return userName;
+        }
+
+        public (string UserId, string UserName, List<Guid> Roles, List<Guid> Permissions) GetUserRolesAndPermissionsFromToken(string token)
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadToken(token) as JwtSecurityToken;
+            if (jwtToken == null)
+            {
+                _logger.LogWarning("Invalid token format.");
+                return (null, null, null, null);
+            }
+
+            // Retrieve user ID and username from claims
+            var userId = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
+            var userName = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+
+            // Retrieve roles from claims
+            var roles = jwtToken.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => Guid.Parse(c.Value))
+                .ToList();
+
+            // Retrieve permissions from claims
+            var permissions = jwtToken.Claims
+                .Where(c => c.Type == "Permission")
+                .Select(c => Guid.Parse(c.Value))
+                .ToList();
+
+            return (userId, userName, roles, permissions);
+        }
+
+        public (string UserId, string UserName, List<Guid> Roles, List<Guid> Permissions) GetUserRolesAndPermissionsFromToken()
+        {
+            var token = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            return GetUserRolesAndPermissionsFromToken(token);
         }
 
         // Log information about the current user from token

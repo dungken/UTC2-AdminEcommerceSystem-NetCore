@@ -15,13 +15,21 @@ namespace api.Services
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<Role> _roleManager;
         private readonly IRoleService _roleService;
+        private readonly ILogger<UserService> _logger;
 
-        public UserService(ApplicationDbContext context, UserManager<User> userManager, RoleManager<Role> roleManager, IRoleService roleService)
+        public UserService(
+            ApplicationDbContext context,
+            UserManager<User> userManager,
+            RoleManager<Role> roleManager,
+            IRoleService roleService,
+            ILogger<UserService> logger
+            )
         {
             _context = context;
             _userManager = userManager;
             _roleManager = roleManager;
             _roleService = roleService;
+            _logger = logger;
         }
 
         public async Task<bool> CheckUsernameExistsAsync(string username)
@@ -99,8 +107,35 @@ namespace api.Services
         public async Task<User> GetUserByIdAsync(string id)
         {
             var user = await _userManager.FindByIdAsync(id);
-            return (user == null || user.IsDeleted) ? user : null;
+
+            if (user == null || user.IsDeleted)
+            {
+                return null;
+            }
+            return user;
         }
+
+        public async Task<IEnumerable<string>> GetPermissionsForRoleAsync(string role)
+        {
+            var roleEntity = await _roleManager.FindByNameAsync(role);
+            if (roleEntity != null)
+            {
+                var permissions = await _context.RolePermissions
+                    .Where(rp => rp.RoleId == roleEntity.Id)
+                    .Select(rp => rp.PermissionId)
+                    .ToListAsync();
+
+                var permissionNames = await _context.Permissions
+                    .Where(p => permissions.Contains(p.PermissionId))
+                    .Select(p => p.Name)
+                    .ToListAsync();
+
+                return permissionNames;
+            }
+
+            return Enumerable.Empty<string>();
+        }
+
 
         public async Task<bool> SaveUserAsync(UserDto userDto)
         {
@@ -215,7 +250,7 @@ namespace api.Services
                 return false;
 
             // Assign the default role of "User"
-            var roleResult = await _userManager.AddToRoleAsync(user, "User");
+            var roleResult = await _userManager.AddToRoleAsync(user, "Customer");
             if (!roleResult.Succeeded)
                 return false;
 
@@ -226,12 +261,13 @@ namespace api.Services
         {
             // Check if user exists
             if (user == null)
-                return false; // or throw an exception, depending on your error handling approach
+            {
+                return false;
+            }
 
             // Update the user properties with data from the PersonalInfoDto
-            user.FirstName = updatePersonalInfoDto.FirstName;
-            user.LastName = updatePersonalInfoDto.LastName;
-            user.UserName = updatePersonalInfoDto.UserName;
+            user.FirstName = updatePersonalInfoDto.FirstName ?? user.FirstName;
+            user.LastName = updatePersonalInfoDto.LastName ?? user.LastName;
             user.PhoneNumber = updatePersonalInfoDto.PhoneNumber;
             user.ProvinceCode = updatePersonalInfoDto.ProvinceCode;
             user.DistrictCode = updatePersonalInfoDto.DistrictCode;
@@ -242,6 +278,7 @@ namespace api.Services
 
             // Save the changes to the database
             var result = await _userManager.UpdateAsync(user);
+            await _context.SaveChangesAsync();
             return result.Succeeded;
         }
 
@@ -249,7 +286,9 @@ namespace api.Services
         {
             // Check if the user exists
             if (user == null)
-                return false; // or throw an exception, depending on your error handling approach
+            {
+                return false;
+            }
 
             // Soft delete the user by setting the IsDeleted flag to true
             user.IsDeleted = true;
@@ -259,18 +298,18 @@ namespace api.Services
 
             return true;
         }
-        public async Task<bool> UpdateUserAsync(UpdateUserDto userDto)
+
+        public async Task<bool> UpdateUserAsync(User user, UpdateUserDto userDto)
         {
-            Console.WriteLine("User Email: " + userDto.Email);
-            Console.WriteLine("User Gender: " + userDto.Gender);
+            if (user == null || userDto == null)
+            {
+                return false;
+            }
 
-            // Update user properties
-            User user = await _userManager.FindByEmailAsync(userDto.Email);
-
+            user.FirstName = userDto.FirstName ?? user.FirstName;
+            user.LastName = userDto.LastName ?? user.LastName;
             user.UserName = userDto.UserName;
             user.Email = userDto.Email;
-            user.FirstName = userDto.FirstName;
-            user.LastName = userDto.LastName;
             user.PhoneNumber = userDto.PhoneNumber;
             user.Gender = userDto.Gender;
             user.DateOfBirth = userDto.DateOfBirth;
@@ -278,9 +317,9 @@ namespace api.Services
             user.DistrictCode = userDto.DistrictCode;
             user.CommuneCode = userDto.CommuneCode;
             user.FullAddress = userDto.FullAddress;
-
             // Save changes
             var result = await _userManager.UpdateAsync(user);
+            await _context.SaveChangesAsync();
             return result.Succeeded;
         }
 
@@ -314,5 +353,31 @@ namespace api.Services
             // No user found by email or username
             return false;
         }
+
+        public async Task<bool> Restore(User user)
+        {
+            if (user == null) return false;
+
+            // Set IsDeleted to false to "restore" the user
+            user.IsDeleted = false;
+
+            // Attach user to the context if it's not already being tracked
+            _context.Users.Attach(user);
+
+            // Mark IsDeleted property as modified
+            _context.Entry(user).Property(u => u.IsDeleted).IsModified = true;
+
+            var result = await _userManager.UpdateAsync(user);
+
+            // If using SaveChanges directly, ensure it's needed for your configuration
+            if (result.Succeeded)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            return result.Succeeded;
+        }
+
+
     }
 }

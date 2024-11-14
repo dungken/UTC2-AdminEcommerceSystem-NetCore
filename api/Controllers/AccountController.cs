@@ -20,7 +20,6 @@ namespace api.Controllers
         private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
         private readonly IJwtService _jwtService;
-        private readonly ISmsService _smsService;
         private readonly ILogger<AccountController> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IVerificationCodeService _verificationCodeService;
@@ -33,7 +32,6 @@ namespace api.Controllers
             IUserService userService,
             IConfiguration configuration,
             IEmailService emailService,
-            ISmsService smsService,
             IJwtService jwtService,
             ILogger<AccountController> logger,
             IHttpClientFactory httpClientFactory,
@@ -47,7 +45,6 @@ namespace api.Controllers
             _userService = userService;
             _configuration = configuration;
             _emailService = emailService;
-            _smsService = smsService;
             _jwtService = jwtService;
             _logger = logger;
             _httpClientFactory = httpClientFactory;
@@ -111,6 +108,7 @@ namespace api.Controllers
 
             // Generate the JWT token with roles and permissions
             var token = await _jwtService.GenerateJwtTokenAsync(user, roles, permissionIds);
+            // _logger.LogInformation("Token generated for user: ", token);
 
             // Return success response with token and user data
             return Ok(_baseResponseService.CreateSuccessResponse(
@@ -611,9 +609,7 @@ namespace api.Controllers
         //========== Helper Methods ==========//
         private async Task<User> GetUserFromTokenAsync()
         {
-            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-            var userName = _jwtService.GetUserNameFromToken(token);
-            return userName != null ? await _userManager.FindByNameAsync(userName) : null;
+            return await _jwtService.GetUserFromTokenAsync();
         }
     }
 }

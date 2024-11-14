@@ -15,6 +15,7 @@ namespace api.Services
         Task<ServiceResponse> CreateUserAsync(AddUserDto createUserDto);
         Task<bool> AddUserAsync(AddUserDto createUserDto);
         Task<User> GetUserByIdAsync(string id);
+        Task<IEnumerable<string>> GetPermissionsForRoleAsync(string role);
         Task<bool> DeleteUserAsync(string email);
         Task<bool> CheckUsernameExistsAsync(string username);
         Task<bool> CheckEmailExistsAsync(string email);
@@ -23,7 +24,8 @@ namespace api.Services
         Task<IList<Guid>> GetUserRolesAsync(User user);
         Task<bool> UpdatePersonalInfoAsync(User user, UpdatePersonalInfoDto updatePersonalInfoDto);
         Task<bool> SoftDeleteUserAsync(User user);
-        Task<bool> UpdateUserAsync(UpdateUserDto userDto);
+        Task<bool> Restore(User user);
+        Task<bool> UpdateUserAsync(User user, UpdateUserDto userDto);
         Task<IdentityResult> AssignRoleToUserAsync(Guid userId, Guid roleId);
         Task<bool> IsUserExistingAsync(string email, string userName);
     }
