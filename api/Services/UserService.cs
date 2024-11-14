@@ -294,5 +294,25 @@ namespace api.Services
 
             return await _userManager.AddToRoleAsync(user, role.Name);
         }
+
+        public async Task<bool> IsUserExistingAsync(string email, string userName)
+        {
+            // Check if user exists by email
+            var userByEmail = await _userManager.FindByEmailAsync(email);
+            if (userByEmail != null)
+            {
+                return true; // User found by email
+            }
+
+            // Check if user exists by username
+            var userByName = await _userManager.FindByNameAsync(userName);
+            if (userByName != null)
+            {
+                return true; // User found by username
+            }
+
+            // No user found by email or username
+            return false;
+        }
     }
 }

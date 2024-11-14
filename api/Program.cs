@@ -1,6 +1,7 @@
 using System.Text;
 using api.Auth;
 using api.Data;
+using api.Middleware;
 using api.Models;
 using api.Profiles;
 using api.Services;
@@ -102,6 +103,7 @@ builder.Services.AddSingleton<IVerificationCodeService, VerificationCodeService>
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IRolePermissionService, RolePermissionService>();
+builder.Services.AddScoped<IBaseReponseService, BaseReponseService>();
 
 // Đăng ký dịch vụ để kiểm tra quyền
 // builder.Services.AddScoped<IUserPermissionService, UserPermissionService>();
@@ -141,9 +143,11 @@ app.Use(async (context, next) =>
     await next();
 });
 
+// Middleware to handle errors
+app.UseMiddleware<ErrorHandlingMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
 // Ensure roles are created

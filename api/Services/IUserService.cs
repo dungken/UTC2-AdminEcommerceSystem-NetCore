@@ -25,5 +25,6 @@ namespace api.Services
         Task<bool> SoftDeleteUserAsync(User user);
         Task<bool> UpdateUserAsync(UpdateUserDto userDto);
         Task<IdentityResult> AssignRoleToUserAsync(Guid userId, Guid roleId);
+        Task<bool> IsUserExistingAsync(string email, string userName);
     }
 }

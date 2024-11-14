@@ -73,3 +73,5 @@ $RECYCLE.BIN/
 .appsettings.json
 api/bin/
 api/obj/
+
+Note.md

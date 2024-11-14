@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace api.Dtos.Account
 {
-    public class FacebookUser
+    public class FacebookUserDto
     {
         public string Id { get; set; }
         public string Email { get; set; }

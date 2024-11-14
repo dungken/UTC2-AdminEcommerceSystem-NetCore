@@ -1,10 +1,6 @@
 {
   "version": 2,
-<<<<<<< HEAD
-  "dgSpecHash": "bannj+z++7U=",
-=======
   "dgSpecHash": "wPAwhUMJ6Zc=",
->>>>>>> temp-branch
   "success": true,
   "projectFilePath": "C:\\Workspace\\utc2-ecommerce-system\\UTC2-AdminEcommerceSystem-NetCore\\api\\api.csproj",
   "expectedPackageFiles": [
@@ -209,6 +205,12 @@
     "C:\\Users\\admin\\.nuget\\packages\\zxing.net.bindings.windows.compatibility\\0.16.12\\zxing.net.bindings.windows.compatibility.0.16.12.nupkg.sha512"
   ],
   "logs": [
+    {
+      "code": "Undefined",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Problem reading the cache file C:\\Workspace\\utc2-ecommerce-system\\UTC2-AdminEcommerceSystem-NetCore\\api\\obj\\project.nuget.cache : Invalid property identifier character: <. Path 'version', line 3, position 0."
+    },
     {
       "code": "NU1701",
       "level": "Warning",

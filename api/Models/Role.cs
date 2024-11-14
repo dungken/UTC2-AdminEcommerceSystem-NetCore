@@ -12,7 +12,6 @@ namespace api.Models
         // Navigation property for role permissions
         [JsonIgnore]
         public ICollection<RolePermission> RolePermissions { get; set; }
-
         public ICollection<UserRole> UserRoles { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
