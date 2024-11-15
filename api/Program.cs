@@ -104,6 +104,7 @@ builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IRolePermissionService, RolePermissionService>();
 builder.Services.AddScoped<IBaseReponseService, BaseReponseService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 // Đăng ký dịch vụ để kiểm tra quyền
 // builder.Services.AddScoped<IUserPermissionService, UserPermissionService>();
