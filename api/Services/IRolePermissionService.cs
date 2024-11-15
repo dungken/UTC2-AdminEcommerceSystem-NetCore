@@ -9,7 +9,7 @@ namespace api.Services
 {
     public interface IRolePermissionService
     {
-        Task<string> AssignPermissionToRoleAsync(RolePermissionDto dto);
+        Task<bool> AssignPermissionsToRoleAsync(Guid roleId, List<Guid> permissionIds);
         Task<IEnumerable<RolePermission>> GetPermissionsByRoleIdAsync(Guid roleId);
     }
 }

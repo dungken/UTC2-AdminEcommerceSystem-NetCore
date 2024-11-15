@@ -378,6 +378,11 @@ namespace api.Services
             return result.Succeeded;
         }
 
-
+        public async Task<List<User>> SearchUsersAsync(string searchTerm)
+        {
+            return await _context.Users
+                        .Where(u => u.UserName.Contains(searchTerm) || u.Email.Contains(searchTerm))
+                        .ToListAsync();
+        }
     }
 }

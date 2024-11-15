@@ -28,5 +28,6 @@ namespace api.Services
         Task<bool> UpdateUserAsync(User user, UpdateUserDto userDto);
         Task<IdentityResult> AssignRoleToUserAsync(Guid userId, Guid roleId);
         Task<bool> IsUserExistingAsync(string email, string userName);
+        Task<List<User>> SearchUsersAsync(string searchTerm);
     }
 }

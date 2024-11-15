@@ -8,11 +8,12 @@ namespace api.Services
 {
     public interface IPermissionService
     {
-        Task<Permission> CreatePermissionAsync(Permission permission);
-        Task<bool> UpdatePermissionAsync(Guid id, Permission permission);
-        Task<Permission> GetPermissionAsync(Guid id);
-        Task<IEnumerable<Permission>> GetPermissionsAsync(); // Lấy tất cả quyền
-        Task DeletePermissionAsync(Guid id);
+        Task<Permission> GetPermissionByIdAsync(Guid permissionId);
+        Task<IEnumerable<Permission>> GetPermissionsAsync();
+        Task<IEnumerable<PermissionWithRolesDto>> GetPermissionsWithRolesAsync();
+        Task<Permission> CreateOrUpdatePermissionAsync(CreatePermissionDto permissionDto);
+        Task<bool> DeletePermissionAsync(Guid permissionId);
+        Task<IList<Permission>> GetPermissionsByUserIdAsync(Guid userId);
         Task<IList<Permission>> GetPermissionsAsync(Guid userId);
     }
 }

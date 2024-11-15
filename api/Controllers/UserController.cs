@@ -522,5 +522,26 @@ namespace api.Controllers
                 "Role assigned to user successfully."
             ));
         }
+
+
+
+        /////////////////////// api/User/Search ///////////////////////
+        [HttpGet("Search")]
+        public async Task<IActionResult> Search([FromQuery] string searchTerm)
+        {
+            if (string.IsNullOrEmpty(searchTerm))
+            {
+                return BadRequest(_baseReponseService.CreateErrorResponse<object>("Search term cannot be empty."));
+            }
+
+            var users = await _userService.SearchUsersAsync(searchTerm);
+
+            if (users == null || users.Count == 0)
+            {
+                return NotFound(_baseReponseService.CreateErrorResponse<object>("No users found matching the search term."));
+            }
+
+            return Ok(_baseReponseService.CreateSuccessResponse(users, "Search user successfully!"));
+        }
     }
 }
