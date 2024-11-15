@@ -93,7 +93,7 @@ builder.Services.AddCors(options =>
 
 // Register services
 builder.Services.AddHttpClient();
-builder.Services.AddAutoMapper(typeof(RoleProfile));
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddTransient<IEmailService, EmailService>();
 builder.Services.AddTransient<ISmsService, SmsService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
@@ -105,6 +105,11 @@ builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IRolePermissionService, RolePermissionService>();
 builder.Services.AddScoped<IBaseReponseService, BaseReponseService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IDiscountService, DiscountService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IColorService, ColorService>();
+builder.Services.AddScoped<ISizeService, SizeService>();
+builder.Services.AddScoped<IImageService, ImageService>();
 
 // Đăng ký dịch vụ để kiểm tra quyền
 // builder.Services.AddScoped<IUserPermissionService, UserPermissionService>();

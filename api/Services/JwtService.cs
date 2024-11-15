@@ -1,24 +1,9 @@
-using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 using api.Models;
-using Azure.Core;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using System.ComponentModel.DataAnnotations;
-using System.Web;
-using api.Dtos.Account;
-using api.Models;
-using api.Services;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using Google.Apis.Auth;
-using api.Utils;
 
 namespace api.Services
 {

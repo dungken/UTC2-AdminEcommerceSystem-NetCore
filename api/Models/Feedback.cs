@@ -16,5 +16,9 @@ namespace api.Models
         // Foreign Key
         public Guid ProductId { get; set; }
         public Product Product { get; set; }
+
+        // Foreign Key for User
+        public Guid UserId { get; set; }
+        public User User { get; set; }  // Navigation property to User
     }
 }

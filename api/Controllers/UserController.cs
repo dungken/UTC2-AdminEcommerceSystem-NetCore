@@ -141,7 +141,7 @@ namespace api.Controllers
             // Check if the file is an image
             try
             {
-                // Upload image to Cloudinary
+                // Upload image to Cloudinary 
                 var uploadParams = new ImageUploadParams
                 {
                     File = new FileDescription(file.FileName, file.OpenReadStream()),
