@@ -1,14 +1,11 @@
 using System.Text;
-using api.Auth;
 using api.Data;
 using api.Middleware;
 using api.Models;
 using api.Profiles;
 using api.Services;
 using CloudinaryDotNet;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -110,19 +107,8 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IColorService, ColorService>();
 builder.Services.AddScoped<ISizeService, SizeService>();
 builder.Services.AddScoped<IImageService, ImageService>();
-
-// Đăng ký dịch vụ để kiểm tra quyền
-// builder.Services.AddScoped<IUserPermissionService, UserPermissionService>();
-
-// // Đăng ký handler cho phân quyền
-// builder.Services.AddSingleton<IAuthorizationHandler, PermissionHandler>();
-
-// builder.Services.AddAuthorization(options =>
-// {
-//     // Cấu hình policy cho quyền
-//     options.AddPolicy("CreateUser", policy => policy.Requirements.Add(new PermissionRequirement("create_users")));
-//     options.AddPolicy("UpdateRole", policy => policy.Requirements.Add(new PermissionRequirement("edit_roles")));
-// });
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 
 // Add controllers
