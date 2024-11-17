@@ -88,6 +88,13 @@ namespace api.Controllers
                 return Unauthorized(_baseResponseService.CreateErrorResponse<object>("Invalid authentication attempt."));
             }
 
+            var roles = await _userService.GetUserRolesAsync(user);
+            var permissions = await _permissionService.GetPermissionsAsync(user.Id);
+            var permissionIds = permissions.Select(p => p.PermissionId).ToList();
+
+            // Generate the JWT token with roles and permissions
+            var token = await _jwtService.GenerateJwtTokenAsync(user, roles, permissionIds);
+
             // Check if two-factor authentication is enabled
             if (user.TwoFactorEnabled)
             {
@@ -96,18 +103,17 @@ namespace api.Controllers
                 await _emailService.SendVerificationCodeEmailAsync(user.Email, code);
 
                 return Ok(_baseResponseService.CreateSuccessResponse(
-                    new { TwoFactorEnabled = true },
+                    new
+                    {
+                        TwoFactorEnabled = true,
+                        UserId = user.Id,
+                        Token = token
+                    },
                     "Two-factor authentication is enabled. A verification code has been sent.")
                 );
             }
 
-            // If 2FA is not enabled, proceed with generating the JWT token
-            var roles = await _userService.GetUserRolesAsync(user);
-            var permissions = await _permissionService.GetPermissionsAsync(user.Id);
-            var permissionIds = permissions.Select(p => p.PermissionId).ToList();
 
-            // Generate the JWT token with roles and permissions
-            var token = await _jwtService.GenerateJwtTokenAsync(user, roles, permissionIds);
             // _logger.LogInformation("Token generated for user: ", token);
 
             // Return success response with token and user data
@@ -439,7 +445,10 @@ namespace api.Controllers
                 return BadRequest(_baseResponseService.CreateErrorResponse<object>("Failed to update user information. Please try again."));
             }
             return Ok(_baseResponseService.CreateSuccessResponse<object>(
-                new { TwoFactorEnabled = true },
+                new
+                {
+                    TwoFactorEnabled = true
+                },
                 "2FA enabled successfully.")
             );
         }
@@ -497,6 +506,8 @@ namespace api.Controllers
         [HttpPost("ForgotPassword")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto model)
         {
+            Console.WriteLine("Email sent is: " + model.Email);
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(_baseResponseService.CreateModelStateErrorResponse("Invalid input data.", ModelState));
@@ -505,7 +516,7 @@ namespace api.Controllers
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user == null)
             {
-                return NotFound(_baseResponseService.CreateErrorResponse<object>("User not found for email."));
+                return BadRequest(_baseResponseService.CreateErrorResponse<object>("User not found for email."));
             }
 
             var resetToken = await GeneratePasswordResetTokenAsync(user);
@@ -580,10 +591,14 @@ namespace api.Controllers
         [HttpPost("ChangePassword")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto model)
         {
+            Console.WriteLine("Current Password: " + model.CurrentPassword);
+            Console.WriteLine("New Password: " + model.NewPassword);
             if (!ModelState.IsValid)
             {
                 return BadRequest(_baseResponseService.CreateModelStateErrorResponse("Invalid input data.", ModelState));
             }
+
+            Console.WriteLine("User from token: " + await GetUserFromTokenAsync());
 
             var user = await GetUserFromTokenAsync();
             if (user == null)
@@ -595,7 +610,7 @@ namespace api.Controllers
 
             if (!result.Succeeded)
             {
-                return BadRequest(_baseResponseService.CreateModelStateErrorResponse("Failed to change password.", result.Errors));
+                return BadRequest(_baseResponseService.CreateModelStateErrorResponse("Incorrect current password.", result.Errors));
             }
 
             return Ok(_baseResponseService.CreateSuccessResponse<object>(

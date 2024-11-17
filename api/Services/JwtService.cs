@@ -81,6 +81,7 @@ namespace api.Services
         public async Task<User> GetUserFromTokenAsync()
         {
             var token = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            // Console.WriteLine("Token is: " + token);
             var userName = GetUserNameFromToken(token);
             return userName != null ? await _userManager.FindByNameAsync(userName) : null;
         }

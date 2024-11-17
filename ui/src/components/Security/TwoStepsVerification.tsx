@@ -16,7 +16,7 @@ const TwoStepsVerification: React.FC = () => {
         const checkTwoFAStatus = async () => {
             try {
                 const response = await GetTwoFAStatusService();
-                if (response.data.isTwoFAEnabled) {
+                if (response.TwoFactorEnabled) {
                     setIsVerified(true); // 2FA is enabled
                 }
             } catch (error) {
@@ -32,17 +32,17 @@ const TwoStepsVerification: React.FC = () => {
         setIsSubmitting(true);
         try {
             const response = await EnabledTwoFactorVerificationService();
-            if (response.data.status === "success") {
-                toast.success(response.data.message);
+            if (response.success === true) {
+                toast.success(response.message);
                 setIsCodeSent(true);
                 if (inputRef.current) {
                     inputRef.current.focus();
                 }
             } else {
-                toast.error(response.data.message);
+                toast.error(response.message);
             }
         } catch (error: any) {
-            toast.error(error.response.data.message);
+            toast.error(error.response.message);
         } finally {
             setIsSubmitting(false);
         }
@@ -53,18 +53,16 @@ const TwoStepsVerification: React.FC = () => {
         setIsSubmitting(true);
         try {
             const response = await VerifyCodeService(verificationCode);
-            if (response.data.status === "success") {
-                toast.success(response.data.message);
+            if (response.success === true) {
+                toast.success(response.message);
                 setIsVerified(true);
                 setIsCodeSent(false); // Hide the verification form
                 setVerificationCode(''); // Clear the input
             } else {
-                toast.error(response.data.message);
+                toast.error(response.message);
             }
         } catch (error: any) {
-            if (error.response && error.response.data.value.message) {
-                toast.error(error.response.data.value.message);
-            }
+            toast.error(error.response.message);
         } finally {
             setIsSubmitting(false);
         }
@@ -75,13 +73,13 @@ const TwoStepsVerification: React.FC = () => {
         try {
             if (isVerified) {
                 const response = await DisableTwoFactorVerificationService();
-                if (response.data.status === "success") {
-                    toast.success(response.data.message);
+                if (response.success === true) {
+                    toast.success(response.message);
                     setIsVerified(false); // Reset the verification state
                     setIsCodeSent(false); // Optionally reset the code sent state
                     setVerificationCode(''); // Clear the input for a fresh start
                 } else {
-                    toast.error(response.data.message);
+                    toast.error(response.message);
                 }
             } else {
                 await handleSendCode({ preventDefault: () => { } } as React.FormEvent); // Trigger the code sending function

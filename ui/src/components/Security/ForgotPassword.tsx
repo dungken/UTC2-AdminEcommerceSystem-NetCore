@@ -15,19 +15,15 @@ const ForgotPassword: React.FC = () => {
             return;
         }
         try {
-            const response = await axios.post('/Account/ForgotPassword', { email });
-            if (response && response.status === 200) {
+            const response = await ForgotPasswordService(email);
+
+            if (response && response.success === true) {
                 toast.info('Password reset instructions sent to your email');
             } else {
-                toast.error('An unexpected error occurred');
+                toast.error(response.message || 'An unexpected error occurred');
             }
         } catch (error: any) {
-            const errorResponse = error.response.data.value;
-            if (errorResponse.status === 'error') {
-                toast.error(errorResponse.message);
-            } else {
-                toast.error('An unexpected error occurred');
-            }
+            toast.error(error.message || 'An unexpected error occurred');
         }
     };
 

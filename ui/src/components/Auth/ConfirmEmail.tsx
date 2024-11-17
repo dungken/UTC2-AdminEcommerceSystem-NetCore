@@ -27,15 +27,19 @@ const ConfirmEmail: React.FC = () => {
             }
 
             try {
-                await ConfirmEmailService(token, email);
-                setConfirmed(true);
-                if (!confirmed)
-                    toast.success('Email confirmed successfully!');
-                navigate('/login');
+                const response = await ConfirmEmailService(token, email);
+                // console.log(response);
+
+                if (response.success) {
+                    setConfirmed(true);
+                    toast.success(response.message);
+                    setTimeout(() => {
+                        navigate('/login');
+                    }, 3000);
+                }
             } catch (error: any) {
                 setConfirmed(false);
-                if (confirmed)
-                    toast.error('Email confirmation failed: Please try again.');
+                toast.error(error.message);
             } finally {
                 setLoading(false);
             }

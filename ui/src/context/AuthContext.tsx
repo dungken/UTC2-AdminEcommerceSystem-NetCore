@@ -1,31 +1,3 @@
-<<<<<<< HEAD
-import React, { createContext, useState, useContext, ReactNode } from 'react';
-
-interface AuthContextType {
-    isAuthenticated: boolean;
-    login: (token: string) => void;
-    logout: () => void;
-    token: string | null;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
-
-    const login = (token: string) => {
-        setToken(token);
-        localStorage.setItem('token', token);
-    };
-
-    const logout = () => {
-        setToken(null);
-        localStorage.removeItem('token');
-    };
-
-    return (
-        <AuthContext.Provider value={{ isAuthenticated: !!token, login, logout, token }}>
-=======
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RegisterService, ConfirmEmailService, LoginService, LogoutService } from '../services/AuthService';
@@ -38,10 +10,15 @@ interface AuthContextProps {
     user: any;
     isAuthenticated: boolean;
     setUser: React.Dispatch<React.SetStateAction<any>>;
-    register: (userData: any) => Promise<{ status: any; message: any }>;
+    register: (userData: any) => Promise<{
+        success: boolean; status: any; message: any
+    }>;
     confirmEmail: (token: string, email: string) => Promise<void>;
     login: (credentials: any) => Promise<{ status: any; message: any }>;
-    confirmTwoFA: (userId: string, verifyCode: string) => Promise<{ status: any; message: any }>;
+    confirmTwoFA: (userId: string, verifyCode: string) => Promise<{
+        token: string;
+        success: boolean; status: any; message: any
+    }>;
     socialLogin: (credentials: any, provider: string) => Promise<{ status: any; message: any }>;
     logout: () => void;
 }
@@ -83,100 +60,50 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const handleRegister = async (userData: any) => {
         try {
             const response = await axios.post('/Account/Register', userData);
-
-            const status = response.data.value.status;
-            const message = response.data.value.message;
-
-            if (status === 'success') {
-                return { status: status, message: message };
-            }
+            return response.data;
         } catch (error) {
             if (axios.isAxiosError(error) && error.response) {
-                console.log("ERROR: ", error.response?.data.errors);
-                return { status: error.response.data.value.status, message: error.response.data.value.message };
+                return error.response.data;
             }
         }
-        return { status: 'error', message: 'An unexpected error occurred.' }; // Ensure a return value
-    }
+    };
 
     const handleConfirmEmail = (token: string, email: string) => handleAuthAction(() => ConfirmEmailService(token, email), '/login');
 
     const handleLogin = async (credentials: any) => {
-        const resultData = {
-            status: '',
-            message: '',
-            token: '',
-            twoFactorEnabled: false,
-            userId: ''
-        };
-
         try {
             const response = await axios.post('/Account/Login', credentials);
-            console.log(response);
-
-            const responseData = response.data;
-            console.log("Response data from handle login: " + responseData);
-
-
-            const status = responseData.status;
-            const message = responseData.message;
-            const token = responseData.data.token;
-            const userId = responseData.data.user.id || '';
-            const twoFactorEnabled = responseData.twoFactorEnabled || false;
-
-            resultData.status = status;
-            resultData.message = message;
-            resultData.token = token;
-            resultData.userId = userId;
-            resultData.twoFactorEnabled = twoFactorEnabled;
-
-            console.log(resultData);
-
-
             setIsAuthenticated(true);
+            return response.data;
 
         } catch (error) {
             if (axios.isAxiosError(error) && error.response) {
-                const errorResponse = error.response.data.value;
-                const status = errorResponse.status;
-                const message = errorResponse.message;
-                resultData.status = status;
-                resultData.message = message;
-                setIsAuthenticated(false);
+                return error.response.data;
             }
-
+            return { status: false, message: 'An unexpected error occurred.' };
         }
-        return resultData;
     };
 
     const handleConfirmTwoFA = async (userId: string, verifyCode: string) => {
         try {
             const response = await axios.post('/Account/Verify2FA', { userId, verifyCode });
-            console.log(response);
+            console.log(response.data);
 
-            const status = response.data.status;
-
-            if (status === 'success') {
-                console.log(response.data.status);
-                console.log(response.data.message);
-                setIsAuthenticated(true);
-                console.log({ status: "success", message: 'Login successful!' });
-
-                return { status: "success", message: 'Login successful!' };
-            }
+            return response.data;
         } catch (error) {
             if (axios.isAxiosError(error) && error.response) {
-                return { status: error.response.data.value.status, message: error.response.data.value.message };
+                return error.response.data;
             }
-        }
-        return { status: 'error', message: 'An unexpected error occurred.' };
-    };
-
+        };
+    }
 
     const handleSocialLogin = async (credentials: any, provider: string) => {
         try {
             const response = await axios.post('/Account/SocialLogin', { accessToken: credentials, provider });
-            const token = response.data.token.toString();
+            console.log(response.data);
+
+
+            const token = response.data.data.token.toString();
 
             if (token) {
                 localStorage.setItem('token', token);
@@ -216,24 +143,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 logout: handleLogout,
             }}
         >
->>>>>>> temp-branch
             {children}
         </AuthContext.Provider>
     );
 };
 
-<<<<<<< HEAD
-export const useAuth = (): AuthContextType => {
-=======
 export const useAuth = (): AuthContextProps => {
->>>>>>> temp-branch
     const context = useContext(AuthContext);
     if (!context) {
         throw new Error('useAuth must be used within an AuthProvider');
     }
     return context;
-<<<<<<< HEAD
 };
-=======
-};
->>>>>>> temp-branch

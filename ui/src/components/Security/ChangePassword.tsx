@@ -28,17 +28,19 @@ const ChangePassword: React.FC = () => {
 
         try {
             const response = await ChangePasswordService(currentPassword, newPassword);
+            console.log(response);
 
-            if (response.data && response.data.status === "success") {
-                toast.success(response.data.message);
+
+            if (response && response.success) {
+                toast.success(response.message);
                 setCurrentPassword('');
                 setNewPassword('');
                 setConfirmPassword('');
             } else {
-                throw new Error(response.data.message || "An unexpected error occurred)");
+                throw new Error(response.message || "An unexpected error occurred)");
             }
         } catch (error: any) {
-            toast.error(error.response.data.errors[0] || "An unexpected error occurred.");
+            toast.error(error.message || "An unexpected error occurred.");
         }
     };
 

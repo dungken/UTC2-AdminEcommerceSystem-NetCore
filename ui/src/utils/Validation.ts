@@ -35,10 +35,10 @@ export const ValidateEmail = (email: string) => {
 };
 
 export const ValidateUsername = (username: string) => {
-    console.log(username);
+    // console.log(username);
 
-    if (username.length < 4 || username.length > 20) {
-        toast.error('Username must be between 4 and 20 characters.');
+    if (username.length < 6 || username.length > 20) {
+        toast.error('Username must be between 6 and 20 characters.');
         return false;
     }
     return true;
@@ -50,7 +50,7 @@ export const ValidatePassword = (password: string, confirmPassword: string) => {
         return false;
     }
 
-    const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    const passwordPattern = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
     if (!passwordPattern.test(password)) {
         toast.error('Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.');
         return false;

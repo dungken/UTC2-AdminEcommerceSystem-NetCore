@@ -47,11 +47,15 @@ const ResetPassword: React.FC = () => {
         }
 
         try {
-            const message = await ResetPasswordService(token, email, newPassword);
-            toast.success(message);
-            setTimeout(() => navigate('/login'), 3000); // Redirect to login after 3 seconds
-        } catch (error: any) {
-            toast.error(error.message);
+            const response = await ResetPasswordService(token, email, newPassword);
+            if (response.success === true) {
+                toast.success(response.message);
+                setTimeout(() => navigate('/login'), 3000);
+            } else {
+                toast.error(response.message || 'An unexpected error occurred.');
+            }
+        } catch (error) {
+            toast.error((error as any).message);
         }
     };
 

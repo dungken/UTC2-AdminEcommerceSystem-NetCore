@@ -23,7 +23,7 @@ const Login: React.FC = () => {
 
     // Validate form inputs
     const validateForm = () => {
-        if (usernameOrEmail.length < 1) {
+        if (usernameOrEmail.length < 6) {
             toast.error('Please enter your username or email.');
             return false;
         }
@@ -33,7 +33,6 @@ const Login: React.FC = () => {
         return true;
     };
 
-    // Standard login submission
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
@@ -44,33 +43,43 @@ const Login: React.FC = () => {
         }
 
         const response: any = await login({ emailOrUsername: usernameOrEmail, password });
+        console.log(response);
+
+
         if (!response) {
             toast.error('Login failed');
             setIsSubmitting(false);
             return;
         }
 
-        const { userId, token, twoFactorEnabled: is2FA, status, message } = response;
+        const { data, success, message } = response;
 
-        setUserId(userId); // Store userId for potential 2FA use
-        setIsTwoFactorEnabled(is2FA);
+        if (data != null) {
+            console.log(data.token);
 
-        if (status === 'success') {
-            if (is2FA && userId) {
-                // 2FA is enabled, prompt for verification code
+            setUserId(data.userId); // Update state
+            setIsTwoFactorEnabled(data.twoFactorEnabled);
+            setTokenStored(data.token);
+
+            // Use direct values from `data` for immediate logic
+            if (data.twoFactorEnabled && data.userId) {
                 toast.info('A verification code has been sent to your email. Please enter it below.');
-                setTokenStored(token);
                 setIsSubmitting(false);
                 return;
             }
 
-            // No 2FA required, proceed with normal login
-            localStorage.setItem('token', token);
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            console.log(data.token);
+            console.log(tokenStored);
+
+
+
+            // Normal login flow
+            localStorage.setItem('token', data.token);
+            axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
             toast.success(message);
             setIsSubmitting(false);
             navigate('/dashboard');
-        } else if (status === 'error') {
+        } else if (success === false) {
             toast.error(message);
             setIsSubmitting(false);
         } else {
@@ -79,6 +88,7 @@ const Login: React.FC = () => {
         }
     };
 
+
     // Handle 2FA code submission
     const handleTwoFactorSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -86,10 +96,18 @@ const Login: React.FC = () => {
         if (isTwoFactorEnabled && userId && twoFactorCode) {
             setIsSubmitting(true);
             try {
-                const responseConfirm: { status: any; message: any; token?: string } = await confirmTwoFA(userId, twoFactorCode);
+                const responseConfirm = await confirmTwoFA(userId, twoFactorCode);
 
-                if (responseConfirm && responseConfirm.status === 'success') {
-                    localStorage.setItem('token', tokenStored);
+                if (!responseConfirm) {
+                    toast.error('Login failed');
+                    setIsSubmitting(false);
+                    return;
+                }
+
+                // console.log(responseConfirm);
+
+                if (responseConfirm.success === true) {
+                    localStorage.setItem('token', tokenStored)
                     axios.defaults.headers.common['Authorization'] = `Bearer ${tokenStored}`;
                     toast.success(responseConfirm.message);
                     navigate('/dashboard');

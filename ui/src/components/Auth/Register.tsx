@@ -47,15 +47,15 @@ const Register: React.FC = () => {
         };
 
         try {
-            const response = await register({ ...userData, isSocialLogin: false });
-            if (response?.status === 'error') {
-                toast.error(response.message);
-            } else if (response?.status === 'success') {
-                navigate('/login');
+            const response = await register(userData);
+            if (response.success === true) {
                 toast.success(response.message);
+                navigate('/login');
+            } else {
+                toast.error(response.message);
             }
         } catch (error) {
-            toast.error("Register failed!");
+            toast.error((error as any).message);
         }
     }
 

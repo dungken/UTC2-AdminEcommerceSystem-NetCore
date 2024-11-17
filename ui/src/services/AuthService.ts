@@ -52,7 +52,15 @@ export const SocialLoginService = async (accessToken: string, provider: string) 
 };
 
 export const ConfirmEmailService = async (token: string, email: string) => {
-    return apiRequest('post', '/Account/ConfirmEmail', { token, email });
+    try {
+        const response = await axios.post('/Account/ConfirmEmail', { token, email });
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            return error.response.data;
+        }
+        throw error;
+    }
 };
 
 export const LoginService = async (credentials: Credentials) => {
@@ -69,46 +77,84 @@ export const ForgotPasswordService = async (email: string) => {
     try {
         const response = await axios.post('/Account/ForgotPassword', { email });
         console.log(response.data);  // Kiểm tra dữ liệu trả về
-        return response;  // Trả về response thành công
+        return response.data;  // Trả về response thành công
     } catch (error) {
         console.log(error);  // Kiểm tra lỗi
-
-        // // Xử lý lỗi nếu có
-        // if (error.response) {
-        //     // Nếu có lỗi phản hồi từ server (ví dụ: lỗi 404, 500)
-        //     console.error('Error response:', error.response);
-        //     alert('An error occurred: ' + error.response.data.message);
-        // } else if (error.request) {
-        //     // Nếu không nhận được phản hồi từ server
-        //     console.error('Error request:', error.request);
-        //     alert('Network error. Please try again later.');
-        // } else {
-        //     // Lỗi khác (có thể là lỗi trong quá trình setup yêu cầu)
-        //     console.error('Error:', error.message);
-        //     alert('An unexpected error occurred. Please try again later.');
-        // }
+        if (axios.isAxiosError(error) && error.response) {
+            return error.response.data;  // Trả về response lỗi
+        }
+        throw error;
     }
 };
 
 export const ResetPasswordService = async (token: string, email: string, newPassword: string) => {
-    return apiRequest('post', '/Account/ResetPassword', { token, email, newPassword });
+    try {
+        const response = await axios.post('/Account/ResetPassword', { token, email, newPassword });
+        console.log(response.data);  // Kiểm tra dữ liệu trả về
+        return response.data;  // Trả về response thành công
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            return error.response.data;
+        }
+    }
 };
 
 export const ChangePasswordService = async (currentPassword: string, newPassword: string) => {
-    return await axios.post('/Account/ChangePassword', { currentPassword, newPassword }, getAuthHeader());
+    try {
+        const response = await axios.post('/Account/ChangePassword', { currentPassword, newPassword }, getAuthHeader());
+        console.log(response);
+
+        console.log(response.data);  // Kiểm tra dữ liệu trả về
+
+        return response.data;  // Trả về response thành công
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            return error.response.data;
+        }
+    }
 };
 
 export const EnabledTwoFactorVerificationService = async () => {
-    return await axios.get('/Account/Enable2FA', getAuthHeader());
+    try {
+        const response = await axios.get('/Account/Enable2FA', getAuthHeader());
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            return error.response.data;
+        }
+    }
 };
 
 export const VerifyCodeService = async (verifyCode: string) => {
-    return await axios.post('/Account/Verify2FA', { verifyCode }, getAuthHeader());
+    try {
+        const response = await axios.post('/Account/Verify2FA', { verifyCode }, getAuthHeader());
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            return error.response.data;
+        }
+
+    }
 };
 
 export const DisableTwoFactorVerificationService = async () => {
-    return await axios.get('/Account/Disable2FA', getAuthHeader());
+    try {
+        const response = await axios.get('/Account/Disable2FA', getAuthHeader());
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            return error.response.data;
+        }
+    }
 }
+
 export const GetTwoFAStatusService = async () => {
-    return await axios.get('/Account/TwoFAStatus', getAuthHeader());
+    try {
+        const response = await axios.get('/Account/TwoFAStatus', getAuthHeader());
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            return error.response.data;
+        }
+    }
 }
