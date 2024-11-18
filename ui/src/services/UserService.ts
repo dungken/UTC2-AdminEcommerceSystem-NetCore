@@ -14,38 +14,55 @@ export const CreateUserService = async (user: any) => {
 };
 
 export const GetPersonalInfoService = async () => {
-    const response = await axios.get('/User/GetPersonalInfo', { headers: getAuthHeader() });
-    // console.log(response.data);
-
-    return response.data;
+    try {
+        const response = await axios.get('/User/GetPersonalInfo', { headers: getAuthHeader() });
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            return error.response.data;
+        }
+        throw error;
+    }
 }
 
 
 export const UpdatePersonalInfoService = async (user: any) => {
-    const response = await axios.put('/User/UpdatePersonalInfo', user, { headers: getAuthHeader() });
-    console.log(response);
+    try {
+        const response = await axios.post('/User/UpdatePersonalInfo', user, { headers: getAuthHeader() });
+        // console.log("Update personal info response:", response);
 
-    return response;
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            return error.response.data;
+        }
+    }
 }
-export const DeleteAccountService = async (username?: string) => {
-    // console.log("Deleting account for:", username);
 
+
+export const DeleteAccountService = async (username?: string) => {
     // Add `username` as a query parameter if it's provided
     const url = username ? `/User/DeleteAccount?username=${encodeURIComponent(username)}` : '/User/DeleteAccount';
-
-    const response = await axios.post(url, {}, { headers: getAuthHeader() });
-    // console.log("Delete account response:", response);
-
-    return response.data;
+    try {
+        const response = await axios.post(url, { headers: getAuthHeader() });
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            return error.response.data;
+        }
+    }
 }
 
 export const GetAllUserService = async (page: number, pageSize: number) => {
     try {
-        const response = await axios.get(`/User/GetAllUser?page=${page}&pageSize=${pageSize}`);
+        const response = await axios.get(`/User/GetAll?page=${page}&pageSize=${pageSize}`);
+        // console.log("Get all user response:", response.data);
+
         return response.data;
     } catch (error) {
-        console.error("API call failed:", error);
-        throw error;
+        if (axios.isAxiosError(error) && error.response) {
+            return error.response.data;
+        }
     }
 };
 

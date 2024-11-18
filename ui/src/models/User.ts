@@ -1,3 +1,8 @@
+interface UserRole {
+    name: string;
+}
+
+
 
 interface User {
     id: number;
@@ -7,7 +12,7 @@ interface User {
     lastName: string;
     email: string;
     gender: string;
-    userRoles: string;
+    userRoles: UserRole[];
     isDeleted: string;
     provinceCode: string;
     districtCode: string;

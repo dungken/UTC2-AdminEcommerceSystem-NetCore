@@ -22,7 +22,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
     return (
         <div className='d-flex align-items-center justify-content-between'>
             <div>
-                <span className="fw-bold text-dark" style={{ fontSize: '1.1rem' }}>Total: {10}</span>
+
             </div>
             <div className="d-flex justify-content-center mt-3">
                 <button className="btn btn-outline-primary me-2" disabled={currentPage === 1} onClick={handlePrevious}>

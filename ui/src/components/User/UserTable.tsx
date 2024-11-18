@@ -5,6 +5,8 @@ import ConfirmationModal from './ConfirmationModal';
 import { toast } from 'react-toastify';
 import { DeleteAccountService, GetAllUserService } from '../../services/UserService';
 import User from '../../models/User';
+import { json } from 'stream/consumers';
+import moment from 'moment';
 
 const UserTable: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -21,28 +23,35 @@ const UserTable: React.FC = () => {
     const fetchData = async (page: number, size: number) => {
         try {
             const response = await GetAllUserService(page, size);
-            console.log(response.users);
+            console.log("Get all user response:", response.data.users.values);
 
-            setUsers(response.users);
-            setTotalPages(response.totalPages);
-            setTotalUser(response.totalUser);
+            if (response.success === true) {
+                // console.log("Users:", response.data.users);
 
-            const initialSelection = response.users.reduce((acc: { [key: number]: boolean }, user: User) => {
-                acc[user.id] = false;
-                return acc;
-            }, {});
-            setSelectedUser(initialSelection);
+                setUsers(response.data.users);
+                setTotalPages(response.data.totalPages);
+                setTotalUser(response.data.totalUser);
+
+                const initialSelection = response.data.users.reduce((acc: { [key: number]: boolean }, user: User) => {
+                    acc[user.id] = false;
+                    return acc;
+                }, {});
+                setSelectedUser(initialSelection);
+            } else {
+                toast.error('Error fetching data: ' + response.message);
+            }
+
         } catch (error) {
             console.error("Error fetching data:", error);
         }
     };
 
-    console.log(users);
 
 
     useEffect(() => {
         fetchData(currentPage, pageSize);
     }, [currentPage, pageSize]);
+    // console.log(users);
 
     const handlePageChange = (page: number) => {
         if (page >= 1 && page <= totalPages) setCurrentPage(page);
@@ -93,6 +102,9 @@ const UserTable: React.FC = () => {
 
     const handleCancelDelete = () => setDeleteUser(null);
 
+    console.log(users);
+
+
     return (
         <div className="container my-4">
             <div className="d-flex justify-content-between mb-3 align-items-center">
@@ -111,6 +123,7 @@ const UserTable: React.FC = () => {
                 </div>
 
                 <div className='d-flex align-items-center'>
+
                     <span className="me-3 text-muted">Rows: </span>
                     <select
                         value={pageSize}
@@ -122,6 +135,9 @@ const UserTable: React.FC = () => {
                             <option key={size} value={size}>{size}</option>
                         ))}
                     </select>
+                    <div className="fw-bold text-dark mx-2 px-2" style={{ fontSize: '1.1rem', width: '7em' }}>
+                        Total: {totalUser}
+                    </div>
                 </div>
             </div>
 
@@ -143,101 +159,36 @@ const UserTable: React.FC = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><input type="checkbox" className="form-check-input" /></td>
-                        <td><img src="https://via.placeholder.com/50" alt="Avatar" className="rounded-circle" width="40" height="40" /></td>
-                        <td>johndoe</td>
-                        <td>johndoe@example.com</td>
-                        <td>Male</td>
-                        <td>1990-01-01</td>
-                        <td>Admin</td>
-                        <td><span className="badge bg-success">Active</span></td>
-                        <td>
-                            <button className="btn btn-sm btn-primary me-2">
-                                <i className="bi bi-pencil-square"></i>
-                            </button>
-                            <button className="btn btn-sm btn-danger">
-                                <i className="bi bi-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><input type="checkbox" className="form-check-input" /></td>
-                        <td><img src="https://via.placeholder.com/50" alt="Avatar" className="rounded-circle" width="40" height="40" /></td>
-                        <td>janedoe</td>
-                        <td>janedoe@example.com</td>
-                        <td>Female</td>
-                        <td>1992-05-15</td>
-                        <td>User</td>
-                        <td><span className="badge bg-warning">Pending</span></td>
-                        <td>
-                            <button className="btn btn-sm btn-primary me-2">
-                                <i className="bi bi-pencil-square"></i>
-                            </button>
-                            <button className="btn btn-sm btn-danger">
-                                <i className="bi bi-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><input type="checkbox" className="form-check-input" /></td>
-                        <td><img src="https://via.placeholder.com/50" alt="Avatar" className="rounded-circle" width="40" height="40" /></td>
-                        <td>bobjones</td>
-                        <td>bobjones@example.com</td>
-                        <td>Male</td>
-                        <td>1985-03-22</td>
-                        <td>Moderator</td>
-                        <td><span className="badge bg-secondary">Inactive</span></td>
-                        <td>
-                            <button className="btn btn-sm btn-primary me-2">
-                                <i className="bi bi-pencil-square"></i>
-                            </button>
-                            <button className="btn btn-sm btn-danger">
-                                <i className="bi bi-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-
-                    {/* {users.map(user => (
-                        <tr key={user.id} className={user.isDeleted ? "table-secondary" : ""}>
-                            <td>
-                                <input
-                                    type="checkbox"
-                                    className="form-check-input"
-                                    checked={!!selectedUser[user.id]}
-                                    onChange={() => handleCheckboxChange(user.id)}
-                                />
-                            </td>
-                            <td>
-                                <img
-                                    src={user.profilePicture ?? avatarImage}
-                                    alt="avatar"
-                                    width={40}
-                                    className="rounded-circle border border-secondary"
-                                />
-                            </td>
+                    {users.map(user => (
+                        <tr>
+                            <td><input type="checkbox" className="form-check-input" /></td>
+                            <td><img src={user.profilePicture || "https://via.placeholder.com/50"} alt="Avatar" className="rounded-circle" width="40" height="40" /></td>
                             <td>{user.userName}</td>
                             <td>{user.email}</td>
-                            <td>{['Male', 'Female'].includes(user.gender) ? user.gender : 'Other'}</td>
-                            <td>{user.userRoles ?? 'User'}</td>
+                            <td>{user.gender ?? 'Other'}</td>
+                            <td>{moment(user.dateOfBirth).format('DD/MM/YYYY')}</td>
                             <td>
-                                <span className={`badge ${user.isDeleted ? 'bg-danger' : 'bg-success'}`}>
-                                    {user.isDeleted ? 'Inactive' : 'Active'}
-                                </span>
+                                {
+                                    user.userRoles.length > 0 ?
+                                        user.userRoles.map(role => (
+                                            role.name != '' &&
+                                            <span className={`badge bg-me bg-${role.name != '' ? 'primary' : 'badge'}`}>{role.name}</span>
+                                        ))
+                                        : 'No Role'
+                                }
+                                {/* <span className="badge bg-secondary"> {user.userRoles.length > 0 ? user.userRoles.map(role => role.name).join(', ') : 'Customer'}</span> */}
                             </td>
+                            <td><span className="badge bg-secondary">Inactive</span></td>
                             <td>
-                                <button className="btn btn-sm btn-light ms-2" onClick={() => handleShowDetails(user)}>
-                                    <i className="bi bi-eye-fill"></i>
+                                <button className="btn btn-sm btn-primary me-2">
+                                    <i className="bi bi-pencil-square"></i>
                                 </button>
-                                <button className="btn btn-sm btn-light ms-2" onClick={() => setEditUser(user)}>
-                                    <i className="bx bx-edit"></i>
-                                </button>
-                                <button className="btn btn-sm btn-danger ms-2" onClick={() => setDeleteUser(user)}>
+                                <button className="btn btn-sm btn-danger">
                                     <i className="bi bi-trash"></i>
                                 </button>
                             </td>
                         </tr>
-                    ))} */}
+                    ))}
                 </tbody>
             </table>
 

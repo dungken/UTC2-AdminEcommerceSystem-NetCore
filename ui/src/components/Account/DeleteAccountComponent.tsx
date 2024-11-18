@@ -16,12 +16,13 @@ const DeleteAccountComponent = () => {
 
         try {
             const response = await DeleteAccountService();
-            if (response.status === 200) {
-                toast.success('Your account has been successfully deleted.');
+            if (response.success) {
+                toast.success(response.message);
                 logout();
             }
         } catch (error) {
-            toast.error('Error deleting the account.');
+            console.error('Delete account failed:', error);
+            toast.error('Failed to delete account. Please try again later.');
         }
     };
 

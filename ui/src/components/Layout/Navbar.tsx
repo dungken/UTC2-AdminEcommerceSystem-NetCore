@@ -15,12 +15,12 @@ const Navbar: React.FC = () => {
         const fetchPersonalInfo = async () => {
             try {
                 const response = await GetPersonalInfoService();
-                if (response.status === 'success') {
+                if (response.success) {
                     const userData = response.data.user;
                     setAvatarFromDB(userData.profilePicture || avatarImage);
                     setUsername(userData.userName);
                 } else {
-                    console.error('Failed to retrieve personal info:', response.data.Message);
+                    console.error('Failed to retrieve personal info:', response.data.message);
                 }
             } catch (error) {
                 console.error('Error fetching personal info:', error);

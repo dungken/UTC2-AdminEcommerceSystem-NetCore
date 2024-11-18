@@ -37,7 +37,9 @@ const MyProfile: React.FC = () => {
         const fetchPersonalInfo = async () => {
             try {
                 const response = await GetPersonalInfoService();
-                if (response.status === 'success') {
+                // console.log(response);
+
+                if (response.success === true) {
                     const userData = response.data.user;
 
                     setUserId(userData.id);
@@ -54,7 +56,7 @@ const MyProfile: React.FC = () => {
                     setSelectedDistrict(userData.districtCode);
                     setSelectedCommune(userData.communeCode);
                 } else {
-                    console.error('Failed to retrieve personal info:', response.data.Message);
+                    console.error('Failed to retrieve personal info:', response.Message);
                 }
             } catch (error) {
                 console.error('Error fetching personal info:', error);
@@ -94,20 +96,24 @@ const MyProfile: React.FC = () => {
 
     const validateForm = async (user: { [key: string]: any }) => {
         // console.log(user.lastName, user.firstName, user.username);
-        if (user.lastName.length < 2) {
+        if (lastName.length < 2) {
             toast.error('Last name must be at least 2 characters long.');
             return false;
         }
-        if (user.firstName.length < 2) {
+        if (firstName.length < 2) {
             toast.error('First name must be at least 2 characters long.');
             return false;
         }
-
-        if (user.username.length < 6) {
-            toast.error('Username must be at least 6 characters long.');
+        if (gender === '') {
+            toast.error('Gender is required.');
             return false;
         }
-        if (!ValidatePhoneNumber(user.phoneNumber)) return false;
+        if (!ValidatePhoneNumber(phoneNumber)) return false;
+        if (dateOfBirth === '') {
+            toast.error('Date of birth is required.');
+            return false;
+        }
+
         return true;
     };
 
@@ -116,31 +122,33 @@ const MyProfile: React.FC = () => {
         e.preventDefault();
         // Validation Form
         const user = {
-            username: username,
+            // username: username,
             lastName: lastName,
             firstName: firstName,
-            email: email,
             phoneNumber: phoneNumber,
             gender: gender,
+            // email: email,
             dateOfBirth: dateOfBirth,
-            fullAddress: fullAddress,
             provinceCode: selectedProvince,
             districtCode: selectedDistrict,
             communeCode: selectedCommune,
+            fullAddress: fullAddress,
         };
 
         if (!validateForm(user)) return;
 
         try {
-            const response = await UpdatePersonalInfoService(user);
+            console.log(user);
 
-            if (response.status === 200) {
-                toast.success('Personal information updated successfully.');
+            const response = await UpdatePersonalInfoService(user);
+            console.log(response);
+
+            if (response.success === true) {
+                toast.success(response.message);
             } else {
-                toast.error('Failed to update personal information.');
+                toast.error(response.message);
             }
         } catch (error) {
-            // console.error('Error updating personal information:', error);
             toast.error('Failed to update personal information.');
         };
 
@@ -154,7 +162,7 @@ const MyProfile: React.FC = () => {
 
             try {
                 const uploadedImageUrl = await UploadSingleFileToCloud(file); // Upload image to backend
-                console.log(uploadedImageUrl);
+                // console.log(uploadedImageUrl);
 
                 setAvatar(uploadedImageUrl); // Update local avatar state
                 setAvatarUrl(uploadedImageUrl); // Update avatar with the uploaded image URL

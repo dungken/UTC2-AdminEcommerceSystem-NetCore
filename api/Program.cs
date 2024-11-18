@@ -114,7 +114,7 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 // Add controllers
 builder.Services.AddControllers().AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     });
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));

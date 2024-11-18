@@ -91,7 +91,7 @@ namespace api.Data
                 .HasDefaultValueSql("GETDATE()");
 
             // Soft delete configuration for User
-            modelBuilder.Entity<User>().HasQueryFilter(u => !u.IsDeleted);
+            // modelBuilder.Entity<User>().HasQueryFilter(u => !u.IsDeleted);
 
 
             // Configuration for Category

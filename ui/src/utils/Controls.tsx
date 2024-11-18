@@ -144,7 +144,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
     options,
     disabled = false,
 }) => (
-    <div className="col-md-4">
+    <div className="col-md-6">
         <label htmlFor={id} className="form-label">{label}</label>
         <select
             id={id}

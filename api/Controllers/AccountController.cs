@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Google.Apis.Auth;
 using api.Utils;
+using Microsoft.EntityFrameworkCore;
 
 namespace api.Controllers
 {
@@ -153,10 +154,32 @@ namespace api.Controllers
                 return BadRequest(_baseResponseService.CreateModelStateErrorResponse("Invalid input data.", ModelState));
             }
 
+            Console.WriteLine(model.Email);
+
+            // Check if user already exists
+            var existingUser = await _userService.IsUserExistingAsync(model.Email, model.UserName);
+            // Console.WriteLine("Existing user: " + existingUser);
             // Check user is deleted or not
-            var deletedUser = await _userManager.FindByEmailAsync(model.Email);
+            var deletedUser = await _userManager.Users
+                        .Where(u => (u.UserName == model.UserName.ToLower() || u.Email == model.Email.ToLower()) && u.IsDeleted)
+                        .FirstOrDefaultAsync();
+            // Console.WriteLine("Deleted user: " + deletedUser);
+
             if (deletedUser != null && deletedUser.IsDeleted)
+            {
                 return BadRequest(_baseResponseService.CreateErrorResponse<object>("User account is deleted. Please contact support."));
+            }
+            if (existingUser && deletedUser != null && deletedUser.IsDeleted)
+            {
+                // Console.WriteLine("User already exists and is deleted.");
+                return BadRequest(_baseResponseService.CreateErrorResponse<object>("User account is deleted. Please contact support."));
+            }
+
+            if (existingUser)
+            {
+                return BadRequest(_baseResponseService.CreateErrorResponse<object>("User already exists. Please login."));
+            }
+
 
             return await HandleNormalRegistration(model);
         }
@@ -164,11 +187,6 @@ namespace api.Controllers
         //-------------- Helper Methods ---------------//
         private async Task<IActionResult> HandleNormalRegistration(RegisterUserDto model)
         {
-            if (await _userService.IsUserExistingAsync(model.Email, model.UserName))
-            {
-                return BadRequest(_baseResponseService.CreateErrorResponse<object>("User already exists. Please login."));
-            }
-
             var newUser = new User
             {
                 UserName = model.UserName,

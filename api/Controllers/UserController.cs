@@ -246,8 +246,13 @@ namespace api.Controllers
                 Users = users.Select(u => new
                 {
                     u.Id,
+                    u.UserName,
+                    u.Email,
                     u.FirstName,
                     u.LastName,
+                    u.Gender,
+                    u.DateOfBirth,
+                    u.ProfilePicture,
                     // Including UserRoles and RolePermissions for each user
                     UserRoles = u.UserRoles.Select(ur => new
                     {
@@ -346,11 +351,12 @@ namespace api.Controllers
                 return Unauthorized(_baseReponseService.CreateErrorResponse<object>("Invalid token or username claim not found."));
             }
 
+            var user = await _userManager.FindByIdAsync(responseFromToken.UserId);
+
             return Ok(_baseReponseService.CreateSuccessResponse(
                 new
                 {
-                    UserId = responseFromToken.UserId,
-                    UserName = responseFromToken.UserName,
+                    User = user,
                     Roles = responseFromToken.Roles,
                     Permissions = responseFromToken.Permissions,
                 },
