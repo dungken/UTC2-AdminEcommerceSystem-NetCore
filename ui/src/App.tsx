@@ -40,12 +40,13 @@ import HierarchyCategory from './components/Product/HierarchyCategory';
 import SupportChat from './components/Support/SupportChat';
 import PermissionListByCate from './components/Permission/PermissionList';
 import PermissionList from './components/Permission/PermissionList';
-import ProductList from './components/Product/ProductListByCate';
+import ProductList from './components/Product/ProductList';
 import ProductListByCate from './components/Product/ProductListByCate';
 import ProductManagement from './components/Product/ProductManagement';
 import DiscountCodeManagement from './components/Product/DiscountCodeManagement';
 import InventoryManagement from './components/Product/InventoryManagement';
 import OrderManagementPage from './components/Order/OrderManagementPage';
+import ProductDetail from './components/Product/ProductDetail';
 
 const App: React.FC = () => {
   return (
@@ -86,10 +87,11 @@ const App: React.FC = () => {
 
                           {/* PRODUCT */}
                           <Route path="/product-category" element={<ProtectedRoute><ProductCategory /></ProtectedRoute>} />
-                          <Route path="/product-list-by-category" element={<ProtectedRoute><ProductListByCate /></ProtectedRoute>} />
+                          <Route path="/product-list-by-category/:categoryId" element={<ProtectedRoute><ProductListByCate /></ProtectedRoute>} />
                           <Route path="/children-category/:parentCategoryId" element={<ProtectedRoute><ProductChildrentCategory /></ProtectedRoute>} />
                           <Route path="/hierarchy-category" element={<ProtectedRoute><HierarchyCategory /></ProtectedRoute>} />
                           <Route path="/product" element={<ProtectedRoute><ProductList /></ProtectedRoute>} />
+                          <Route path="/product-detail/:productId" element={<ProtectedRoute><ProductDetail /></ProtectedRoute>} />
                           <Route path="/product/create" element={<ProtectedRoute><ProductManagement /></ProtectedRoute>} />
                           <Route path="/discount" element={<ProtectedRoute><DiscountCodeManagement /></ProtectedRoute>} />
                           <Route path="/inventory" element={<ProtectedRoute><InventoryManagement /></ProtectedRoute>} />

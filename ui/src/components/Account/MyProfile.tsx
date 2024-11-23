@@ -161,6 +161,8 @@ const MyProfile: React.FC = () => {
             const file = event.target.files[0];
 
             try {
+                // console.log(file);
+
                 const uploadedImageUrl = await UploadSingleFileToCloud(file); // Upload image to backend
                 // console.log(uploadedImageUrl);
 

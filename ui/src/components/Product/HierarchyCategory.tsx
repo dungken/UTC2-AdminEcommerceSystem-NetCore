@@ -40,7 +40,7 @@ const HierarchyCategory: React.FC = () => {
             return (
                 <li key={category.id} className="list-group-item category-item">
                     <div className="d-flex justify-content-between align-items-center">
-                        <Link to={'/product-list-by-category'}>
+                        <Link to={`/product-list-by-category/${category.id}`}>
                             <span className="category-header text-decoration-underline">{category.name}</span>
                         </Link>
                         {category.subCategories.length > 0 && (

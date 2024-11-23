@@ -44,8 +44,20 @@ namespace api.Controllers
             return Ok(_baseReponseService.CreateSuccessResponse(product));
         }
 
-        //////////////////////// POST: api/Products ////////////////////////
-        [HttpPost]
+        //////////////////////// GET: api/Products/Category/{cateId} ////////////////////////
+        [HttpGet("category/{cateId}")]
+        public async Task<ActionResult<List<ProductDTO>>> GetProductsByCategory(Guid cateId)
+        {
+            var products = await _productService.GetProductsByCategoryAsync(cateId);
+            if (products == null)
+            {
+                return NotFound(_baseReponseService.CreateErrorResponse<object>("No products found."));
+            }
+            return Ok(_baseReponseService.CreateSuccessResponse(products));
+        }
+
+        //////////////////////// POST: api/Products/Create ////////////////////////
+        [HttpPost("Create")]
         public async Task<ActionResult<ProductDTO>> CreateProduct([FromBody] ProductDTO productDto)
         {
             if (productDto == null)
@@ -53,7 +65,7 @@ namespace api.Controllers
                 return BadRequest(_baseReponseService.CreateErrorResponse<object>("Product data is required."));
             }
             var createdProduct = await _productService.CreateProductAsync(productDto);
-            return CreatedAtAction(nameof(GetProductById), new { id = createdProduct.Id }, createdProduct);
+            return Ok(_baseReponseService.CreateSuccessResponse(new { product = createdProduct }, "Product created successfully."));
         }
 
 

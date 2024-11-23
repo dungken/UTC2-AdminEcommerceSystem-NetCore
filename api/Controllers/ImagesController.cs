@@ -1,4 +1,9 @@
+using System.Net;
+using api.Data;
+using api.Models;
 using api.Services;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Mvc;
 
 
@@ -10,40 +15,119 @@ namespace api.Controllers
     {
         private readonly IImageService _imageService;
         private readonly ILogger<ImagesController> _logger;
+        private readonly Cloudinary _cloudinary;
         private readonly IBaseReponseService _baseResponseService;
+        private readonly ApplicationDbContext _context;
+        private readonly IConfiguration _configuration;
 
         public ImagesController(
             IImageService imageService,
             ILogger<ImagesController> logger,
-            IBaseReponseService baseResponseService
+            Cloudinary cloudinary,
+            IBaseReponseService baseResponseService,
+            ApplicationDbContext context,
+            IConfiguration configuration
         )
         {
             _imageService = imageService;
             _logger = logger;
+            _cloudinary = cloudinary;
             _baseResponseService = baseResponseService;
+            _context = context;
+            _configuration = configuration;
+            var cloudName = configuration["Cloudinary:CloudName"];
+            var apiKey = configuration["Cloudinary:ApiKey"];
+            var apiSecret = configuration["Cloudinary:ApiSecret"];
+
+            if (string.IsNullOrEmpty(cloudName) || string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(apiSecret))
+            {
+                _logger.LogError("Cloudinary configuration is missing: CloudName={CloudName}, ApiKey={ApiKey}, ApiSecret={ApiSecret}",
+                    cloudName, apiKey, apiSecret);
+            }
+
+
+            var acc = new Account(cloudName, apiKey, apiSecret);
+            _cloudinary = new Cloudinary(acc);
+
+
         }
 
-        // Upload multiple images for a product
+
         [HttpPost("UploadMultiple")]
-        public async Task<IActionResult> UploadImages([FromForm] IFormFile[] files, [FromForm] Guid productId, [FromForm] string altText)
+        public async Task<IActionResult> UploadMultipleImages([FromForm] IFormFile[] files, [FromForm] Guid productId, [FromForm] string altText)
         {
+            if (files == null || files.Length == 0)
+            {
+                return BadRequest(_baseResponseService.CreateErrorResponse<object>("No files uploaded."));
+            }
+
+            if (files.Any(file => file.Length > 5 * 1024 * 1024))
+            {
+                return BadRequest(_baseResponseService.CreateErrorResponse<object>("One or more files exceed the size limit."));
+            }
+
+            if (files.Any(file => !file.ContentType.StartsWith("image/")))
+            {
+                return BadRequest(_baseResponseService.CreateErrorResponse<object>("One or more files are not valid images."));
+            }
+
+            List<object> uploadedImages = new List<object>();
             try
             {
-                if (files == null || files.Length == 0)
+                foreach (var file in files)
                 {
-                    return BadRequest(_baseResponseService.CreateErrorResponse<object>("No files uploaded."));
+                    if (file == null || file.Length == 0) continue;
+
+                    // Upload each image to Cloudinary
+                    var uploadParams = new ImageUploadParams
+                    {
+                        File = new FileDescription(file.FileName, file.OpenReadStream()),
+                        UploadPreset = "WebDemoDK"
+                    };
+
+                    var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+                    if (uploadResult.StatusCode == HttpStatusCode.OK)
+                    {
+                        // Create image record in the database
+                        var image = new Image
+                        {
+                            Id = Guid.NewGuid(),
+                            Url = uploadResult.SecureUrl.AbsoluteUri,
+                            AltText = altText,
+                            ProductId = productId,
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        };
+
+                        _context.Add(image);
+                        await _context.SaveChangesAsync();
+
+                        // Add the uploaded image details to the response
+                        uploadedImages.Add(new
+                        {
+                            imageId = image.Id,
+                            url = image.Url,
+                            altText = image.AltText,
+                            productId = image.ProductId,
+                            createdAt = image.CreatedAt
+                        });
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Image upload failed for file: {FileName}", file.FileName);
+                    }
                 }
 
-                // Upload images using the service
-                var images = await _imageService.UploadImagesAsync(files, productId, altText);
-                return Ok(_baseResponseService.CreateSuccessResponse(images, "Images uploaded successfully."));
+                return Ok(_baseResponseService.CreateSuccessResponse(uploadedImages, "Images uploaded successfully."));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while uploading images.");
-                return StatusCode(500, new { Message = "Internal server error." });
+                _logger.LogError(ex, "An error occurred while uploading images.");
+                return StatusCode(500, new { Message = "An error occurred during upload." });
             }
         }
+
 
         // Get images by Product ID
         [HttpGet("GetByProductId/{productId}")]

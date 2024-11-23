@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css'; // Import CSS cho giao diện soạn thảo
 
-const TextEditor: React.FC = () => {
+interface TextEditorProps {
+    content: string;
+    setContent: (value: string) => void;
+}
+
+const TextEditor: React.FC<TextEditorProps> = ({ content, setContent }) => {
 
     const modules = {
         toolbar: [
@@ -22,8 +27,6 @@ const TextEditor: React.FC = () => {
         'list', 'bullet', 'indent',
         'link', 'image', 'video', 'color', 'background', 'align'
     ];
-
-    const [content, setContent] = useState<string>('');
 
     const handleChange = (value: string) => {
         setContent(value);

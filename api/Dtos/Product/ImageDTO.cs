@@ -7,7 +7,7 @@ namespace api.Dtos.Product
 {
     public class ImageDTO
     {
-        public Guid Id { get; set; }
+        public Guid? Id { get; set; }
         public string Url { get; set; }
         public string AltText { get; set; }
         public DateTime CreatedAt { get; set; }

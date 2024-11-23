@@ -4,123 +4,95 @@ import ProductForm from './ProductForm';
 import ProductList from './ProductList';
 import ProductImages from './ProductImages';
 import ProductReviews from './ProductReviews';
-
-// Định nghĩa kiểu dữ liệu cho sản phẩm
-export interface Product {
-    id: number;
-    name: string;
-    description: string;
-    price: number;
-    inventory: number;
-    active: boolean;
-    images: string[];
-    category: string;
-    tags: string[];
-    discount?: number;
-}
-
-// Define initialProducts for demonstration purposes
-const initialProducts: Product[] = [
-    {
-        id: 1,
-        name: 'Sample Product',
-        description: 'This is a sample product.',
-        price: 100,
-        inventory: 10,
-        active: true,
-        images: ['https://via.placeholder.com/150'],
-        category: 'Sample Category',
-        tags: ['sample', 'product'],
-        discount: 10,
-    },
-    // Add more sample products if needed
-];
+import { Product } from './types';
+import ProductImageGallery from './ProductImageGallery';
 
 const ProductManagement: React.FC = () => {
-    const [products, setProducts] = useState<Product[]>(initialProducts);
+    const [products, setProducts] = useState<Product[]>();
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [productsPerPage] = useState(8);
+    const [selectedImages, setSelectedImages] = useState<string[]>([]);
 
-    const totalProducts = products.length;
-    const activeProducts = products.filter(product => product.active).length;
+    // const totalProducts = products.length;
+    // const activeProducts = products.filter(product => product.active).length;
 
-    const handleAddProduct = (product: Product) => {
-        setProducts([...products, product]);
-    };
+    // const handleAddProduct = (product: Product) => {
+    //     setProducts([...products, product]);
+    // };
 
-    const handleEditProduct = (updatedProduct: Product) => {
-        setProducts(
-            products.map((product) =>
-                product.id === updatedProduct.id ? updatedProduct : product
-            )
-        );
-    };
+    // const handleEditProduct = (updatedProduct: Product) => {
+    //     setProducts(
+    //         products.map((product) =>
+    //             product.id === updatedProduct.id ? updatedProduct : product
+    //         )
+    //     );
+    // };
 
-    const handleDeleteProduct = (id: number) => {
-        setProducts(products.filter((product) => product.id !== id));
-    };
+    // const handleDeleteProduct = (id: string) => {
+    //     setProducts(products.filter((product) => product.id !== id));
+    // };
 
-    const handleToggleActive = (id: number) => {
-        setProducts(
-            products.map((product) =>
-                product.id === id ? { ...product, active: !product.active } : product
-            )
-        );
-    };
+    // const handleToggleActive = (id: string) => {
+    //     setProducts(
+    //         products.map((product) =>
+    //             product.id === id ? { ...product, active: !product.active } : product
+    //         )
+    //     );
+    // };
 
-    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchTerm(e.target.value);
-    };
+    // const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    //     setSearchTerm(e.target.value);
+    // };
 
-    const handleExport = () => {
-        // Implement export functionality here
-        console.log('Exporting products...');
-    };
+    // const handleExport = () => {
+    //     // Implement export functionality here
+    //     console.log('Exporting products...');
+    // };
 
-    const handleUpdateInventoryAndPrice = (id: number, price: number, inventory: number) => {
-        setProducts(
-            products.map((product) =>
-                product.id === id ? { ...product, price, inventory } : product
-            )
-        );
-    };
+    // const handleUpdateInventoryAndPrice = (id: string, price: number, inventory: number) => {
+    //     setProducts(
+    //         products.map((product) =>
+    //             product.id === id ? { ...product, price, inventory } : product
+    //         )
+    //     );
+    // };
 
-    const handleApplyDiscount = (id: number, discount: number) => {
-        setProducts(
-            products.map((product) =>
-                product.id === id ? { ...product, discount } : product
-            )
-        );
-    };
+    // const handleApplyDiscount = (id: string, discount: number) => {
+    //     setProducts(
+    //         products.map((product) =>
+    //             product.id === id ? { ...product, discount } : product
+    //         )
+    //     );
+    // };
 
-    const handleLinkCategory = (id: number, category: string) => {
-        setProducts(
-            products.map((product) =>
-                product.id === id ? { ...product, category } : product
-            )
-        );
-    };
+    // const handleLinkCategory = (id: string, category: string) => {
+    //     setProducts(
+    //         products.map((product) =>
+    //             product.id === id ? { ...product, category } : product
+    //         )
+    //     );
+    // };
 
-    const handleAddTags = (id: number, tags: string[]) => {
-        setProducts(
-            products.map((product) =>
-                product.id === id ? { ...product, tags: [...product.tags, ...tags] } : product
-            )
-        );
-    };
+    // const handleAddTags = (id: string, tags: string[]) => {
+    //     setProducts(
+    //         products.map((product) =>
+    //             product.id === id ? { ...product, tags: [...product.tags, ...tags] } : product
+    //         )
+    //     );
+    // };
 
-    const filteredProducts = products.filter((product) =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // const filteredProducts = products.filter((product) =>
+    //     product.name.toLowerCase().includes(searchTerm.toLowerCase())
+    // );
 
-    // Pagination logic
-    const indexOfLastProduct = currentPage * productsPerPage;
-    const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-    const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+    // // Pagination logic
+    // const indexOfLastProduct = currentPage * productsPerPage;
+    // const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+    // const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
 
-    const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+    // const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
     return (
         <Container>
@@ -137,25 +109,27 @@ const ProductManagement: React.FC = () => {
             </Header>
 
             <Stats>
-                <p>Total Products: {totalProducts}</p>
-                <p>Active Products: {activeProducts}</p>
+                {/* <p>Total Products: {totalProducts}</p>
+                <p>Active Products: {activeProducts}</p> */}
             </Stats>
 
             <div className="row">
                 <ProductForm
-                    onSubmit={selectedProduct ? handleEditProduct : handleAddProduct}
-                    selectedProduct={selectedProduct}
-                    onClearSelection={() => setSelectedProduct(null)}
-                    onUpdateInventoryAndPrice={handleUpdateInventoryAndPrice}
-                    onApplyDiscount={handleApplyDiscount}
-                    onLinkCategory={handleLinkCategory}
-                    onAddTags={handleAddTags}
+                // onSubmit={selectedProduct ? handleEditProduct : handleAddProduct}
+                // selectedProduct={selectedProduct}
+                // onClearSelection={() => setSelectedProduct(null)}
+                // onUpdateInventoryAndPrice={handleUpdateInventoryAndPrice}
+                // onApplyDiscount={handleApplyDiscount}
+                // onLinkCategory={handleLinkCategory}
+                // onAddTags={handleAddTags}
+                // selectedImages={selectedImages}
+                // setSelectedImages={setSelectedImages}
                 />
 
             </div>
 
             <div className="row my-3">
-                <ProductList
+                {/* <ProductList
                     products={currentProducts}
                     onEdit={setSelectedProduct}
                     onDelete={handleDeleteProduct}
@@ -164,15 +138,15 @@ const ProductManagement: React.FC = () => {
                     onApplyDiscount={handleApplyDiscount}
                     onLinkCategory={handleLinkCategory}
                     onAddTags={handleAddTags}
-                />
+                /> */}
 
-                <Pagination>
+                {/* <Pagination>
                     {Array.from({ length: Math.ceil(filteredProducts.length / productsPerPage) }, (_, i) => (
                         <PageNumber key={i + 1} onClick={() => paginate(i + 1)}>
                             {i + 1}
                         </PageNumber>
                     ))}
-                </Pagination>
+                </Pagination> */}
 
             </div>
 
@@ -181,8 +155,8 @@ const ProductManagement: React.FC = () => {
             <div className="row mx-1 my-3">    {
                 selectedProduct && (
                     <>
-                        {/* <ProductImages product={selectedProduct} /> */}
-                        <ProductReviews productId={selectedProduct.id} />
+                        {/* <ProductImageGallery setSelectedImages={selectedImages} selectedImages={setSelectedImages} /> */}
+                        {/* <ProductReviews productId={selectedProduct.id} /> */}
                     </>
                 )
             }</div>

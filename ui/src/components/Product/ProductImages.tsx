@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Product } from './ProductManagement';
+import { Product } from '../Order/types';
+// import { Product } from './ProductManagement';
 
 interface ProductImagesProps {
   product: Product;
@@ -11,9 +12,9 @@ const ProductImages: React.FC<ProductImagesProps> = ({ product }) => {
     <ImagesContainer>
       <h4>Manage Product Images</h4>
       <ImageList>
-        {product.images.map((image, index) => (
+        {/* {product.image.map((image, index) => (
           <img key={index} src={image} alt={`Product Image ${index + 1}`} />
-        ))}
+        ))} */}
       </ImageList>
       <button className='btn bg-primary text-light my-2'>Add Image</button>
     </ImagesContainer>

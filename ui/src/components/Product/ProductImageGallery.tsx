@@ -1,47 +1,87 @@
 import React, { useState } from 'react';
 import './ProductImageGallery.css';
+import { ImageDTO } from './types';
 
-const ProductImageGallery = () => {
-    // Sample images array (in a real app, these might come from props or an API)
-    const images = [
-        'https://via.placeholder.com/150',
-        'https://via.placeholder.com/150',
-        'https://via.placeholder.com/150',
-        'https://via.placeholder.com/150',
+interface ProductImageGalleryProps {
+    selectedImages: { file: File; altText: string }[]; // Updated type
+    setSelectedImages: React.Dispatch<React.SetStateAction<{ file: File; altText: string }[]>>;
+}
+
+
+const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({ selectedImages, setSelectedImages }) => {
+    const initialImages: ImageDTO[] = [
+        { url: 'https://via.placeholder.com/300', altText: 'Image 1' },
+        { url: 'https://via.placeholder.com/300', altText: 'Image 2' },
+        { url: 'https://via.placeholder.com/300', altText: 'Image 3' },
+        { url: 'https://via.placeholder.com/300', altText: 'Image 4' },
     ];
 
-    // State for the selected main image
-    const [mainImage, setMainImage] = useState(images[0]);
+    const [images, setImages] = useState<ImageDTO[]>(initialImages);
+    const [mainImage, setMainImage] = useState<ImageDTO>(initialImages[0]); // Initialize with the first image from initialImages
 
-    // Handle thumbnail click
-    const handleThumbnailClick = (image: string) => {
+    const handleThumbnailClick = (image: ImageDTO) => {
         setMainImage(image);
     };
 
+    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files) {
+            const uploadedFiles = Array.from(event.target.files);
+
+            // Prompt for altText for each file
+            const newImages = uploadedFiles.map((file) => {
+                const altText = prompt(`Enter alt text for ${file.name}:`) || file.name; // Use the file name if no altText is provided
+                const url = URL.createObjectURL(file);
+
+                return {
+                    file, // Keep the original File object
+                    altText,
+                    url,
+                };
+            });
+
+            setMainImage({ url: newImages[0].url, altText: newImages[0].altText }); // Set the first uploaded image as the main image
+            setSelectedImages((prevSelected) => [...prevSelected, ...newImages]); // Update selected images with files and altText
+        }
+    };
+
+    // Display thumbnails based on selectedImages or fallback to initial images
+    const displayImages = selectedImages.length > 0
+        ? selectedImages.map((img) => ({ url: URL.createObjectURL(img.file), altText: img.altText }))
+        : images;
+
     return (
         <div className="product-gallery">
-            {/* Main image display */}
-            <div className="main-image">
-                <img src={mainImage} alt="Product" />
+            {/* Main image */}
+            <div className="main-image-frame">
+                <img src={mainImage.url} alt={mainImage.altText} className="main-image" />
             </div>
 
             {/* Thumbnails */}
-            <div className="row thumbnail-row">
-                {images.map((image, index) => (
-                    <div key={index} className="col-md-3 thumbnail">
+            <div className="thumbnail-row">
+                {displayImages.map((image, index) => (
+                    <div key={index} className="thumbnail-frame">
                         <img
-                            src={image}
-                            alt={`Thumbnail ${index + 1}`}
-                            onClick={() => handleThumbnailClick(image)}
-                            className={mainImage === image ? 'active-thumbnail' : ''}
+                            src={image.url}
+                            alt={image.altText}
+                            onClick={() => setMainImage(image)}
+                            className={`thumbnail ${mainImage.url === image.url ? 'active-thumbnail' : ''}`}
                         />
                     </div>
                 ))}
             </div>
 
-            {/* Button Upload */}
-            <div className="upload-button mt-2">
-                <button className="btn btn-sm btn-primary">Upload Image</button>
+            {/* Upload Button */}
+            <div className="upload-button">
+                <label className="btn btn-sm btn-primary">
+                    Upload Image
+                    <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageUpload}
+                        style={{ display: 'none' }}
+                    />
+                </label>
             </div>
         </div>
     );

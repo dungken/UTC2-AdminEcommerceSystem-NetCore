@@ -1,14 +1,84 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
+import { Link, useParams } from 'react-router-dom';
+import { Product } from './types'; // Adjust the path to where the Product type is located
+import { GetProductsByCategory } from '../../services/ProductService';
 
-// Kiểu dữ liệu cho sản phẩm
-interface Product {
-  id: number;
-  name: string;
-  imageUrl: string;
-  price: number;
-  description: string;
-}
+// Component that fetches and displays products by category
+const ProductListByCate = () => {
+  const { categoryId } = useParams<{ categoryId: string }>();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      if (!categoryId) return;
+
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await GetProductsByCategory(categoryId);
+        console.log(response.data);
+
+        setProducts(response.data);  // Assuming data is in the format of Product[]
+      } catch (err) {
+        setError('Failed to fetch products. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [categoryId]); // Refetch when categoryId changes
+
+  if (loading) return <LoadingMessage>Loading...</LoadingMessage>;
+  if (error) return <ErrorMessage>{error}</ErrorMessage>;
+  if (!products.length) return <NoProductsMessage>No products available in this category.</NoProductsMessage>;
+
+
+  const ShortDescription = ({ description }: { description: string }) => {
+    const maxLength = 20;
+    // Truncate description to maxLength and append "..." if it's longer
+    const shortenedDescription = description.length > maxLength
+      ? description.substring(0, maxLength) + '...'
+      : description;
+
+    return <ProductDescription dangerouslySetInnerHTML={{ __html: shortenedDescription }} />;
+  };
+
+
+  return (
+    <Container>
+      <CategoryTitle>Product List</CategoryTitle>
+      <ProductGrid>
+        {products.map((product) => (
+          <ProductCard key={product.id}>
+            <ProductImage src={product.images[0]?.url || 'https://via.placeholder.com/300'} alt={product.name} />
+            <ProductInfo>
+              <ProductName><Link to={`/product-detail/${product.id}`}>{product.name}</Link></ProductName>
+              <div className="row my-2">
+                <div className="col-md-7">
+                  <ProductPrice>
+                    Price: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                  </ProductPrice>
+                </div>
+                <div className="col-md-4">
+                  <ProductPrice>Stock: {`${product.stock ?? 1}`}</ProductPrice>
+                </div>
+              </div>
+              {/* <ShortDescription description={product.description} /> */}
+            </ProductInfo>
+          </ProductCard>
+        ))}
+      </ProductGrid>
+    </Container>
+  );
+};
+
+export default ProductListByCate;
+
+
 
 const Container = styled.div`
   padding: 20px;
@@ -36,7 +106,7 @@ const ProductCard = styled.div`
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   transition: transform 0.2s;
-  
+
   &:hover {
     transform: translateY(-5px);
   }
@@ -56,6 +126,7 @@ const ProductName = styled.h3`
   font-size: 1.2em;
   color: #333;
   margin: 0;
+  text-align: center;
 `;
 
 const ProductPrice = styled.p`
@@ -70,58 +141,20 @@ const ProductDescription = styled.p`
   margin-top: 10px;
 `;
 
-// Component hiển thị danh sách sản phẩm
-const ProductListByCate = () => {
+const LoadingMessage = styled.div`
+  text-align: center;
+  font-size: 1.5em;
+  color: #333;
+`;
 
-  const products: Product[] = [
-    {
-      id: 1,
-      name: 'Áo sơ mi trắng',
-      imageUrl: 'https://via.placeholder.com/150',
-      price: 300000,
-      description: 'Áo sơ mi chất liệu cao cấp, phong cách thanh lịch.',
-    },
-    {
-      id: 2,
-      name: 'Quần jeans xanh',
-      imageUrl: 'https://via.placeholder.com/150',
-      price: 500000,
-      description: 'Quần jeans thời trang, phù hợp với mọi phong cách.',
-    },
-    {
-      id: 3,
-      name: 'Áo thun đen',
-      imageUrl: 'https://via.placeholder.com/150',
-      price: 200000,
-      description: 'Áo thun cotton mềm mại, dễ chịu.',
-    },
-    {
-      id: 4,
-      name: 'Giày thể thao',
-      imageUrl: 'https://via.placeholder.com/150',
-      price: 700000,
-      description: 'Giày thể thao chất lượng cao, êm ái khi di chuyển.',
-    },
-  ];
+const ErrorMessage = styled.div`
+  text-align: center;
+  font-size: 1.5em;
+  color: red;
+`;
 
-  return (
-    <Container>
-      <CategoryTitle>{'Category Name'}</CategoryTitle>
-      <ProductGrid>
-        {products.map((product) => (
-          <ProductCard key={product.id}>
-            <ProductImage src={product.imageUrl} alt={product.name} />
-            <ProductInfo>
-              <ProductName>{product.name}</ProductName>
-              <ProductPrice>${product.price}</ProductPrice>
-              <ProductDescription>{product.description}</ProductDescription>
-            </ProductInfo>
-          </ProductCard>
-        ))}
-      </ProductGrid>
-    </Container>
-  );
-};
-
-export default ProductListByCate;
-
+const NoProductsMessage = styled.div`
+  text-align: center;
+  font-size: 1.5em;
+  color: #333;
+`;

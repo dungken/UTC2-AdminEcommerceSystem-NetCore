@@ -70,7 +70,7 @@ const InventoryTable: React.FC<InventoryTableProps> = ({ inventory, setInventory
                         <Td>{product.price}</Td>
                         <Td>
                             <Button onClick={() => handleEditProduct(product)}>Edit</Button>
-                            <Button onClick={() => handleDeleteProduct(product.id)}>Delete</Button>
+                            {/* <Button onClick={() => handleDeleteProduct(product.id)}>Delete</Button> */}
                         </Td>
                     </tr>
                 ))}

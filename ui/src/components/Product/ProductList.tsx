@@ -1,93 +1,107 @@
-import React from 'react';
-import styled from 'styled-components';
-import { Product } from './ProductManagement';
+import React, { useEffect, useState } from "react";
+import { GetAllProductsService } from "../../services/ProductService";
+import ProductCard from "./ProductCard";
+import { Product } from "./types";
 
-interface ProductListProps {
-  products: Product[];
-  onEdit: (product: Product) => void;
-  onDelete: (id: number) => void;
-  onToggleActive: (id: number) => void;
-  onUpdateInventoryAndPrice: (id: number, price: number, inventory: number) => void;
-  onApplyDiscount: (id: number, discount: number) => void;
-  onLinkCategory: (id: number, category: string) => void;
-  onAddTags: (id: number, tags: string[]) => void;
-}
+const ProductList = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState<number>(6); // Initially show 6 products
 
-const ProductList: React.FC<ProductListProps> = ({ products, onEdit, onDelete, onToggleActive, onUpdateInventoryAndPrice, onApplyDiscount, onLinkCategory, onAddTags }) => (
-  <ListContainer>
-    {products.map((product) => (
-      <ProductCard key={product.id} product={product} onEdit={onEdit} onDelete={onDelete} onToggleActive={onToggleActive} />
-    ))}
-  </ListContainer>
-);
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await GetAllProductsService();
+        setProducts(response.data);
+        setLoading(false); // Set loading to false once products are fetched
+      } catch (error) {
+        setError("Failed to load products");
+        setLoading(false); // Set loading to false even in case of error
+      }
+    };
 
-interface ProductCardProps {
-  product: Product;
-  onEdit: (product: Product) => void;
-  onDelete: (id: number) => void;
-  onToggleActive: (id: number) => void;
-}
+    fetchProducts();
+  }, []);
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, onEdit, onDelete, onToggleActive }) => (
-  <Card>
-    <h4>{product.name}</h4>
-    <img src={product.images[0]} alt={product.name} />
-    <p className='my-2'> {product.description}</p>
-    <p>Price: ${product.price}</p>
-    <p>Inventory: {product.inventory}</p>
-    <ButtonGroup>
-      <button className="btn btn-sm btn-warning">
-        <i className="bi bi-pencil"></i>
-      </button>
-      <button className="btn btn-sm btn-danger">
-        <i className="bi bi-trash"></i>
-      </button>
-      <button className="btn btn-sm btn-primary">
-        {product.active ? <i className="bi bi-toggle-off"></i> : <i className="bi bi-toggle-on"></i>}
-      </button>
+  const handleShowMore = () => {
+    setVisibleCount((prevCount) => prevCount + 6); // Show 6 more products on click
+  };
 
-    </ButtonGroup>
-  </Card>
-);
+  const handleShowLess = () => {
+    setVisibleCount((prevCount) => (prevCount > 6 ? prevCount - 6 : 6)); // Show 6 fewer products
+  };
 
-const ListContainer = styled.div`
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 5px;
-    margin-bottom: 20px;
-`;
-
-const Card = styled.div`
-  background-color: #fff;
-  border-radius: 8px;
-  padding: 15px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  text-align: center;
-
-  h3 {
-    color: #333;
+  if (loading) {
+    return <div>Loading products...</div>; // You can replace this with a spinner
   }
 
-  img {
-    width: 100%;
-    height: auto;
-    border-radius: 4px;
+  if (error) {
+    return <div>{error}</div>; // Show error message if there's an error
   }
-`;
 
-const ButtonGroup = styled.div`
-  display: flex;
-  justify-content: center;
-  margin-top: 10px;
-  gap: 20px;
+  return (
+    <div>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "16px",
+          justifyContent: "space-around",
+        }}
+      >
+        {products.slice(0, visibleCount).map((product) => (
+          <ProductCard key={product.id} product={product} />
+        ))}
+      </div>
 
-  // button {
-  //    padding: 3px 13px;
-  //   color: #fff;
-  //   border: none;
-  //   border-radius: 9px;
-  //   cursor: pointer;
-  // }
-`;
+
+
+      <div className="text-center row d-flex justify-content-around align-items-center mt-3">
+        <div className="col-md-6">
+          <div style={{ marginTop: "16px" }}>
+            {visibleCount > 6 && (
+              <button
+                onClick={handleShowLess}
+                style={{
+                  padding: "10px 20px",
+                  background: "rgb(29 99 91)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  marginRight: "10px",
+                  display: "inline-block",
+                }}
+              >
+                Show Less
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="col-md-6">
+          {visibleCount < products.length && (
+            <button
+              onClick={handleShowMore}
+              style={{
+                padding: "10px 20px",
+                background: "#2a9d8f",
+                color: "#fff",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "14px",
+                display: "inline-block",
+              }}
+            >
+              Show More
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default ProductList;

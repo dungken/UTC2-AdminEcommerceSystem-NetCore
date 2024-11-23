@@ -14,6 +14,7 @@ namespace api.Models
         public int StockQuantity { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
+        public string Status { get; set; } = "Active";
 
         // Foreign Key
         public Guid CategoryId { get; set; } // Linked category ID

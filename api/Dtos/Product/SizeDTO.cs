@@ -7,7 +7,7 @@ namespace api.Dtos.Product
 {
     public class SizeDTO
     {
-        public Guid Id { get; set; }
+        public Guid? Id { get; set; }
         public string Name { get; set; }
     }
 }

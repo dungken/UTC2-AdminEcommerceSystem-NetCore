@@ -65,7 +65,7 @@ builder.Services.AddAuthentication(options =>
 // Add Cloudinary
 builder.Services.AddSingleton<Cloudinary>(sp =>
 {
-    var cloudinarySettings = builder.Configuration.GetSection("CloudinarySettings");
+    var cloudinarySettings = builder.Configuration.GetSection("Cloudinary");
     var account = new Account(
         cloudinarySettings["CloudName"],
         cloudinarySettings["ApiKey"],
@@ -73,6 +73,7 @@ builder.Services.AddSingleton<Cloudinary>(sp =>
     );
     return new Cloudinary(account);
 });
+
 
 // Configure CORS
 builder.Services.AddCors(options =>
