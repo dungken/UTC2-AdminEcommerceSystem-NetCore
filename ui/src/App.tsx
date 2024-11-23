@@ -87,7 +87,7 @@ const App: React.FC = () => {
                           {/* PRODUCT */}
                           <Route path="/product-category" element={<ProtectedRoute><ProductCategory /></ProtectedRoute>} />
                           <Route path="/product-list-by-category" element={<ProtectedRoute><ProductListByCate /></ProtectedRoute>} />
-                          <Route path="/children-category" element={<ProtectedRoute><ProductChildrentCategory /></ProtectedRoute>} />
+                          <Route path="/children-category/:parentCategoryId" element={<ProtectedRoute><ProductChildrentCategory /></ProtectedRoute>} />
                           <Route path="/hierarchy-category" element={<ProtectedRoute><HierarchyCategory /></ProtectedRoute>} />
                           <Route path="/product" element={<ProtectedRoute><ProductList /></ProtectedRoute>} />
                           <Route path="/product/create" element={<ProtectedRoute><ProductManagement /></ProtectedRoute>} />

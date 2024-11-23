@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { DeleteAccountService, GetAllUserService } from '../../services/UserService';
 import { Link } from 'react-router-dom';
 
-const ProductCategoryTable: React.FC = () => {
+const ProductCategoryTable: React.FC<{ categories: any[], onEditCategory: (category: any) => void, onDeleteCategory: (id: string) => void }> = ({ categories, onEditCategory, onDeleteCategory }) => {
 
     return (
         <div className="container my-4">
@@ -49,58 +49,28 @@ const ProductCategoryTable: React.FC = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><input type="checkbox" className="form-check-input" /></td>
-                        <td>
-                            <Link to="/children-category">Quan</Link>
-                        </td>
-                        <td>Danh muc quan</td>
-                        <td><span className="badge bg-success">Active</span></td>
-                        <td>
-                            <button className="btn btn-sm btn-primary me-2">
-                                <i className="bi bi-pencil-square"></i>
-                            </button>
-                            <button className="btn btn-sm btn-danger">
-                                <i className="bi bi-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><input type="checkbox" className="form-check-input" /></td>
-                        <td>
-                            <Link to="/children-category">Ao</Link>
-                        </td>
-                        <td>Danh muc ao</td>
-                        <td><span className="badge bg-warning">Pending</span></td>
-                        <td>
-                            <button className="btn btn-sm btn-primary me-2">
-                                <i className="bi bi-pencil-square"></i>
-                            </button>
-                            <button className="btn btn-sm btn-danger">
-                                <i className="bi bi-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><input type="checkbox" className="form-check-input" /></td>
-                        <td>
-                            <Link to="/children-category">Giay</Link>
-                        </td>
-                        <td>Danh muc giay</td>
-                        <td><span className="badge bg-danger">Inactive</span></td>
-                        <td>
-                            <button className="btn btn-sm btn-primary me-2">
-                                <i className="bi bi-pencil-square"></i>
-                            </button>
-                            <button className="btn btn-sm btn-danger">
-                                <i className="bi bi-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
+                    {categories.map(category => (
+                        <tr key={category.id}>
+                            <td><input type="checkbox" className="form-check-input" /></td>
+                            <td>
+                                <Link to={`/children-category/${category.id}`}>{category.name}</Link>
+                            </td>
+                            <td>{category.description}</td>
+                            <td><span className={`badge ${category.status === 'Active' ? 'bg-success' : category.status === 'Pending' ? 'bg-warning' : 'bg-danger'}`}>{category.status}</span></td>
+                            <td>
+                                <button className="btn btn-sm btn-primary me-2" onClick={() => onEditCategory(category)}>
+                                    <i className="bi bi-pencil-square"></i>
+                                </button>
+                                <button className="btn btn-sm btn-danger" onClick={() => onDeleteCategory(category.id)}>
+                                    <i className="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
                 </tbody>
             </table>
 
-            <Pagination currentPage={1} totalPages={2} onPageChange={() => { }} />
+            <Pagination currentPage={1} totalPages={1} onPageChange={() => { }} />
         </div>
     );
 };

@@ -11,6 +11,7 @@ namespace api.Models
         public string Name { get; set; }
         public string Description { get; set; }
         public Guid? ParentCategoryId { get; set; } // Foreign Key for parent category (nullable)
+        public string Status { get; set; } = "Active";
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime UpdatedAt { get; set; } = DateTime.Now;

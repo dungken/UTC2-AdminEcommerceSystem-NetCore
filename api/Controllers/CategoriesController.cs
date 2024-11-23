@@ -30,7 +30,7 @@ namespace api.Controllers
             }
 
             var createdCategory = await _categoryService.CreateCategoryAsync(categoryDto);
-            return CreatedAtAction(nameof(GetCategoryById), new { id = createdCategory.Id }, createdCategory);
+            return Ok(_baseReponseService.CreateSuccessResponse(createdCategory));
         }
 
         //////////////////////////// GET: api/Categories/{id} ////////////////////////////

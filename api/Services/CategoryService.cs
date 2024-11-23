@@ -25,6 +25,7 @@ namespace api.Services
             {
                 Name = categoryDto.Name,
                 Description = categoryDto.Description,
+                Status = categoryDto.Status,
                 ParentCategoryId = categoryDto.ParentCategoryId,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -38,6 +39,7 @@ namespace api.Services
                 Id = category.Id,
                 Name = category.Name,
                 Description = category.Description,
+                Status = category.Status,
                 ParentCategoryId = category.ParentCategoryId,
                 SubCategories = new List<CategoryDto>() // Initialize to empty list
             };
@@ -57,12 +59,14 @@ namespace api.Services
                 Id = category.Id,
                 Name = category.Name,
                 Description = category.Description,
+                Status = category.Status,
                 ParentCategoryId = category.ParentCategoryId,
                 SubCategories = category.SubCategories.Select(sub => new CategoryDto
                 {
                     Id = sub.Id,
                     Name = sub.Name,
                     Description = sub.Description,
+                    Status = sub.Status,
                     ParentCategoryId = sub.ParentCategoryId,
                     SubCategories = new List<CategoryDto>() // Initialize to empty list
                 }).ToList()
@@ -81,12 +85,14 @@ namespace api.Services
                 Id = category.Id,
                 Name = category.Name,
                 Description = category.Description,
+                Status = category.Status,
                 ParentCategoryId = category.ParentCategoryId,
                 SubCategories = category.SubCategories.Select(sub => new CategoryDto
                 {
                     Id = sub.Id,
                     Name = sub.Name,
                     Description = sub.Description,
+                    Status = sub.Status,
                     ParentCategoryId = sub.ParentCategoryId,
                     SubCategories = new List<CategoryDto>() // Initialize to empty list
                 }).ToList()
@@ -105,6 +111,7 @@ namespace api.Services
                 Id = subCategory.Id,
                 Name = subCategory.Name,
                 Description = subCategory.Description,
+                Status = subCategory.Status,
                 ParentCategoryId = subCategory.ParentCategoryId,
                 SubCategories = new List<CategoryDto>() // Initialize to empty list
             }).ToList();
@@ -120,6 +127,7 @@ namespace api.Services
 
             existingCategory.Name = categoryDto.Name;
             existingCategory.Description = categoryDto.Description;
+            existingCategory.Status = categoryDto.Status;
             existingCategory.ParentCategoryId = categoryDto.ParentCategoryId;
             existingCategory.UpdatedAt = DateTime.UtcNow;
 
@@ -130,6 +138,7 @@ namespace api.Services
                 Id = existingCategory.Id,
                 Name = existingCategory.Name,
                 Description = existingCategory.Description,
+                Status = existingCategory.Status,
                 ParentCategoryId = existingCategory.ParentCategoryId,
                 SubCategories = new List<CategoryDto>() // Initialize to empty list
             };
