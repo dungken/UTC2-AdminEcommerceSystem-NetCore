@@ -31,7 +31,7 @@ namespace api.Controllers
         public async Task<IActionResult> GetAllRoles()
         {
             var roles = await _roleService.GetAllRolesAsync();
-            return Ok(_baseReponseService.CreateSuccessResponse(roles, "Get all roles successfully!"));
+            return Ok(_baseReponseService.CreateSuccessResponse(new { Roles = roles }, "Get all roles successfully!"));
         }
 
 

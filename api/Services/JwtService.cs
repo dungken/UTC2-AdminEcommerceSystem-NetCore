@@ -125,6 +125,7 @@ namespace api.Services
             var userId = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
             var userName = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
 
+
             // Retrieve roles from claims
             var roles = jwtToken.Claims
                 .Where(c => c.Type == ClaimTypes.Role)

@@ -32,6 +32,10 @@ namespace api.Dtos.User
         public string CommuneCode { get; set; }
         [Required]
         public string FullAddress { get; set; }
+        [Required]
+        public string Status { get; set; }
+        [Required]
+        public string RoleName { get; set; }
         public string? ProfilePicture { get; set; }
     }
 }

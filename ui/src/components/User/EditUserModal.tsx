@@ -3,19 +3,46 @@ import React, { useEffect, useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { GetInforAddress } from '../../utils/GetInforAddress';
-import { CheckUsernameEmailUniqueness, ValidateEmail, ValidateFile, ValidatePassword, ValidatePhoneNumber, ValidateRequiredFields, ValidateUsername } from '../../utils/Validation';
-import { InputField, PasswordField, ConfirmPasswordField, PhoneNumberField, SelectField } from '../../utils/Controls';
-import { CreateUserService } from '../../services/UserService';
-import { UploadSingleFileToCloud } from '../../utils/UploadSingleFileToCloud';
+import { ValidatePhoneNumber, ValidateRequiredFields } from '../../utils/Validation';
+import { InputField, PhoneNumberField, SelectField } from '../../utils/Controls';
+import { UpdateUserService } from '../../services/UserService';
 import { GetAllRolesService } from '../../services/RoleService';
+import User from '../../models/User';
 
-const UserModal: React.FC = () => {
+
+interface EditUserModalProps {
+    editUser: User;
+    onClose: () => void; // Callback to close the modal
+    onUpdateSuccess: () => void; // Callback after successful update
+}
+
+const EditUserModal: React.FC<EditUserModalProps> = ({ editUser, onClose, onUpdateSuccess }) => {
+    console.log("Edit User Modal:", editUser);
+
     const [provinces, setProvinces] = useState<any[]>([]);
     const [districts, setDistricts] = useState<any[]>([]);
     const [communes, setCommunes] = useState<any[]>([]);
     const [selectedProvince, setSelectedProvince] = useState('');
     const [selectedDistrict, setSelectedDistrict] = useState('');
     const [selectedCommune, setSelectedCommune] = useState('');
+    const [selectedRole, setSelectedRole] = useState<string>('Select Role');
+    const [roles, setRoles] = useState<Set<string>>(new Set());
+    const [userData, setUserData] = useState(editUser);
+
+    useEffect(() => {
+        setUserData(editUser);
+        setSelectedProvince(editUser.provinceCode || '');
+        setSelectedDistrict(editUser.districtCode || '');
+        setSelectedCommune(editUser.communeCode || '');
+    }, [editUser]);
+
+    const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = event.target;
+        setUserData({
+            ...userData,
+            [name]: value
+        });
+    };
 
     useEffect(() => {
         GetInforAddress('https://vn-public-apis.fpo.vn/provinces/getAll?limit=-1', setProvinces);
@@ -33,7 +60,6 @@ const UserModal: React.FC = () => {
         }
     }, [selectedDistrict]);
 
-
     const handleProvinceChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedProvince(event.target.value);
         setDistricts([]);
@@ -49,10 +75,6 @@ const UserModal: React.FC = () => {
         const requiredFields = [
             { field: 'firstName', message: 'First Name is required.' },
             { field: 'lastName', message: 'Last Name is required.' },
-            { field: 'username', message: 'Username is required.' },
-            { field: 'email', message: 'Email is required.' },
-            { field: 'password', message: 'Password is required.' },
-            { field: 'confirmPassword', message: 'Confirm Password is required.' },
             { field: 'phoneNumber', message: 'Phone Number is required.' },
             { field: 'gender', message: 'Gender is required.' },
             { field: 'dateOfBirth', message: 'Date of Birth is required.' },
@@ -60,89 +82,56 @@ const UserModal: React.FC = () => {
             { field: 'districtCode', message: 'Districts is required.' },
             { field: 'communeCode', message: 'Communes is required.' },
             { field: 'fullAddress', message: 'Address is required.' },
-            { field: 'profilePicture', message: 'File is required.', isFile: true },
-            { field: 'role', message: 'Role is required.' },
+            { field: 'roleName', message: 'Role is required.' },
             { field: 'status', message: 'Status is required.' }
         ];
 
         if (!ValidateRequiredFields(user, requiredFields)) return false;
-        if (!ValidateEmail(user.email)) return false;
-        if (!ValidateUsername(user.username)) return false;
-        if (!ValidatePassword(user.password, user.confirmPassword)) return false;
         if (!ValidatePhoneNumber(user.phoneNumber)) return false;
-        if (!ValidateFile(user.profilePicture, ['image/jpeg', 'image/png'], "Only JPEG, PNG files are allowed", 2 * 1024 * 1024, "2MB")) return false;
-        if (!await CheckUsernameEmailUniqueness(user.username, user.email)) return false;
         return true;
     };
 
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
-        const formData = new FormData(event.target as HTMLFormElement);
-        const user = Object.fromEntries(formData.entries());
-        if (!(await validateForm(user))) return;
+        console.log("Edit user data", userData);
+
+        const userUpdate = {
+            id: userData.id,
+            firstName: userData.firstName ?? editUser.firstName,
+            lastName: userData.lastName ?? editUser.lastName,
+            userName: userData.userName,
+            email: userData.email,
+            phoneNumber: userData.phoneNumber ?? editUser.phoneNumber,
+            gender: userData.gender ?? editUser.gender,
+            dateOfBirth: userData.dateOfBirth ?? editUser.dateOfBirth,
+            provinceCode: userData.provinceCode ?? editUser.provinceCode,
+            districtCode: userData.districtCode ?? editUser.districtCode,
+            communeCode: userData.communeCode ?? editUser.communeCode,
+            fullAddress: userData.fullAddress ?? editUser.fullAddress,
+            status: userData.status ?? editUser.status,
+            roleName: selectedRole === 'Select Role' ? editUser.roleName : selectedRole
+        };
+
+        console.log('User Update:', userUpdate);
+
+        if (!await validateForm(userUpdate)) return;
+
+
         try {
-            const userData = {
-                firstName: user.firstName,
-                lastName: user.lastName,
-                username: user.username,
-                email: user.email,
-                password: user.password,
-                phoneNumber: user.phoneNumber,
-                gender: user.gender,
-                provinceCode: user.provinceCode,
-                districtCode: user.districtCode,
-                communeCode: user.communeCode,
-                fullAddress: user.fullAddress,
-                dateOfBirth: user.dateOfBirth,
-                profilePicture: null,
-                roleName: user.role,
-                status: user.status
-            }
-
-            // console.log("User data is: ", userData);
-
-            const response = await CreateUserService(userData);
-            // console.log("Response: ", response);
-
-            // console.log("User profile picture: ", user.profilePicture);
-            // console.log("User username: ", user.username);
-
-
-
-            const urlUploadResponse = await UploadSingleFileToCloud(user.profilePicture as File, user.username as string);
-
-            if (response.success && urlUploadResponse) {
-                // relooad page after add user
-                window.location.reload();
-                toast.success('User added successfully.');
-            } else {
-                toast.error('Failed to add user: ' + response.data.message);
-            }
+            await UpdateUserService(userUpdate);
+            onUpdateSuccess(); // Notify parent of successful update
+            onClose(); // Close modal
         } catch (error) {
-            handleError(error);
+            console.error('Error updating user:', error);
         }
 
     };
 
-
-
-    const handleError = (error: any) => {
-        console.error('Error adding user:', error);
-        if (axios.isAxiosError(error) && error.response) {
-            toast.error(`Failed to add user: ${error.response.data.message}`);
-        } else {
-            toast.error(`Failed to add user: ${error}`);
-        }
-    };
-
-    const [selectedRole, setSelectedRole] = useState<string>('Select Role');
     const handleRoleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedRole(event.target.value);
     };
 
-
-    const [roles, setRoles] = useState<Set<string>>(new Set());
     useEffect(() => {
         const fetchRoles = async () => {
             try {
@@ -162,11 +151,11 @@ const UserModal: React.FC = () => {
     const roleList = Array.from(roles);
 
     return (
-        <div className="modal fade" id="createUserModel" tabIndex={-1} aria-labelledby="createUserModelLabel" aria-hidden="true">
+        <div className="modal fade" id="editUserModel" tabIndex={-1} aria-labelledby="editUserModelLabel" aria-hidden="true">
             <div className="modal-dialog modal-lg modal-dialog-centered">
                 <div className="modal-content">
                     <div className="modal-header justify-content-center">
-                        <h3 className="modal-title" id="createUserModelLabel">Create User Information</h3>
+                        <h3 className="modal-title" id="editUserModelLabel">Edit User Information</h3>
                         <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div className="modal-body">
@@ -176,54 +165,31 @@ const UserModal: React.FC = () => {
                                 id="modalEditUserFirstName"
                                 name="firstName"
                                 placeholder="John"
+                                value={userData.firstName}
+                                onChange={handleInputChange}
                             />
                             <InputField
                                 label="Last Name"
                                 id="modalEditUserLastName"
                                 name="lastName"
                                 placeholder="Doe"
-                            />
-                            <InputField
-                                label="Username"
-                                id="modalEditUserName"
-                                name="username"
-                                placeholder="johndoe007"
-                            />
-                            <InputField
-                                label="Email"
-                                id="modalEditUserEmail"
-                                name="email"
-                                placeholder="example@domain.com"
-                                type="email"
+                                value={userData.lastName}
+                                onChange={handleInputChange}
                             />
 
-                            <InputField
-                                label="Password"
-                                id="modalEditUserPassword"
-                                name="password"
-                                placeholder="********"
-                                type="password"
-                            />
-
-                            <InputField
-                                label="Confirm Password"
-                                id="modalEditUserConfirmPassword"
-                                name="confirmPassword"
-                                placeholder="********"
-                                type="password"
-                            />
-
-                            <PhoneNumberField />
+                            <PhoneNumberField value={userData.phoneNumber} onChange={handleInputChange} />
 
                             <SelectField
                                 label="Gender"
-                                id="modalEditUsertatus"
+                                id="modalEditUserGender"
                                 name="gender"
                                 options={[
                                     { value: 'Male', label: 'Male' },
                                     { value: 'Female', label: 'Female' },
                                     { value: 'Other', label: 'Other' }
                                 ]}
+                                value={userData.gender}
+                                onChange={handleInputChange}
                             />
 
                             <InputField
@@ -231,12 +197,8 @@ const UserModal: React.FC = () => {
                                 id="modalEditUserDateOfBirth"
                                 name="dateOfBirth"
                                 type="date"
-                            />
-                            <InputField
-                                label="Profile Picture"
-                                id="modalEditUserProfilePicture"
-                                name="profilePicture"
-                                type="file"
+                                value={userData.dateOfBirth}
+                                onChange={handleInputChange}
                             />
 
                             <SelectField
@@ -244,7 +206,10 @@ const UserModal: React.FC = () => {
                                 id="province"
                                 name='provinceCode'
                                 value={selectedProvince}
-                                onChange={handleProvinceChange}
+                                onChange={(e) => {
+                                    handleProvinceChange(e);
+                                    handleInputChange(e);
+                                }}
                                 options={provinces.map(province => ({ value: province.code, label: province.name }))}
                             />
                             <SelectField
@@ -252,7 +217,10 @@ const UserModal: React.FC = () => {
                                 id="district"
                                 name='districtCode'
                                 value={selectedDistrict}
-                                onChange={handleDistrictChange}
+                                onChange={(e) => {
+                                    handleDistrictChange(e);
+                                    handleInputChange(e);
+                                }}
                                 options={districts.map(district => ({ value: district.code, label: district.name_with_type }))}
                             />
                             <SelectField
@@ -260,22 +228,30 @@ const UserModal: React.FC = () => {
                                 id="commune"
                                 name='communeCode'
                                 value={selectedCommune}
-                                onChange={(e) => setSelectedCommune(e.target.value)}
+                                onChange={(e) => {
+                                    setSelectedCommune(e.target.value);
+                                    handleInputChange(e);
+                                }}
                                 options={communes.map(commune => ({ value: commune.code, label: commune.name_with_type }))}
                             />
 
                             <InputField
                                 label="Address"
-                                id="modalEditUserName"
+                                id="modalEditUserAddress"
                                 name="fullAddress"
                                 placeholder="175/111/16 - Đường số 2"
+                                value={userData.fullAddress}
+                                onChange={handleInputChange}
                             />
 
                             <div className="col-md-6">
                                 <label className="form-label">Roles</label>
                                 <select
                                     value={selectedRole}
-                                    onChange={handleRoleChange}
+                                    onChange={(e) => {
+                                        handleRoleChange(e);
+                                        handleInputChange(e);
+                                    }}
                                     className="form-select"
                                     name='role'
                                     style={{ borderColor: '#ced4da', borderRadius: '4px', boxShadow: 'none' }}
@@ -288,13 +264,15 @@ const UserModal: React.FC = () => {
 
                             <SelectField
                                 label="Status"
-                                id=""
+                                id="modalEditUserStatus"
                                 name="status"
                                 options={[
                                     { value: 'Active', label: 'Active' },
                                     { value: 'Inactive', label: 'Inactive' },
                                     { value: 'Pending', label: 'Pending' }
                                 ]}
+                                value={userData.status}
+                                onChange={handleInputChange}
                             />
 
 
@@ -313,4 +291,4 @@ const UserModal: React.FC = () => {
 
 
 
-export default UserModal;
+export default EditUserModal;

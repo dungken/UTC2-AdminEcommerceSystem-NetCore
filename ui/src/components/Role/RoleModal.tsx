@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Table, Spinner } from 'react-bootstrap';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { CreateOrUpdateRoleService, GetAllPermissionsService } from '../../services/RoleService';
 
 interface Permission {
     permissionId: string;
@@ -23,25 +24,25 @@ const RoleModal: React.FC<RoleModalProps> = ({ show, handleClose, role, onSaveRo
     const [selectedPermissions, setSelectedPermissions] = useState<{ [key: string]: boolean }>({});
     const [isLoading, setIsLoading] = useState(false);
 
+
     useEffect(() => {
-        if (show) {
-            setIsLoading(true);
-            axios.get('/Permission/GetAll')
-                .then((response) => {
-                    setPermissions(response.data);
-                    setIsLoading(false);
-                })
-                .catch((error) => {
-                    setIsLoading(false);
-                    toast.error('Error fetching permissions.');
-                });
+        fetchPermissions();
+    }, []);
+
+    const fetchPermissions = async () => {
+        try {
+            const response = await GetAllPermissionsService();
+            console.log(response);
+
+            if (response.success) {
+                setPermissions(response.data.permissions);
+            } else {
+                toast.error(response.message);
+            }
+        } catch (error) {
+            console.error('Error fetching permissions:', error);
         }
-    }, [show]);
-
-    // useEffect(() => {
-    //     setRoleName(role ? role.roleName : '');
-    // }, [role]);
-
+    };
 
     useEffect(() => {
         if (role) {
@@ -65,7 +66,7 @@ const RoleModal: React.FC<RoleModalProps> = ({ show, handleClose, role, onSaveRo
         }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!roleName) {
             toast.error('Role name is required.');
@@ -74,18 +75,22 @@ const RoleModal: React.FC<RoleModalProps> = ({ show, handleClose, role, onSaveRo
 
         const selectedPermissionIds = Object.keys(selectedPermissions).filter((key) => selectedPermissions[key]);
 
-        setIsLoading(true);
-        axios.post('/Role/CreateOrUpdate', { name: roleName, permissions: selectedPermissionIds })
-            .then(response => {
+        try {
+            const roleData = {
+                name: roleName,
+                permissions: selectedPermissionIds,
+            };
+            const response = await CreateOrUpdateRoleService(roleData);
+            if (response.success) {
                 toast.success('Role saved successfully!');
                 onSaveRole(response.data);
                 handleClose();
-            })
-            .catch(error => {
-                setIsLoading(false);
-                toast.error('Error saving role.');
-                console.error('Error saving role:', error);
-            });
+            } else {
+                toast.error(response.message);
+            }
+        } catch (error) {
+            toast.error('Error saving role.');
+        }
     };
 
     return (

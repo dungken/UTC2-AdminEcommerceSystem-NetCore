@@ -25,5 +25,11 @@ namespace api.Dtos.User
         public string? DistrictCode { get; set; }
         public string? CommuneCode { get; set; }
         public string? FullAddress { get; set; }
+
+        [Required]
+        public string Status { get; set; }
+
+        [Required]
+        public string RoleName { get; set; }
     }
 }

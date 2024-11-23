@@ -5,6 +5,7 @@ import RoleModal from './RoleModal';
 import { Button } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import roleImage from '../../assets/img/logo/role-permission.png';
+import { CreateOrUpdateRoleService, DeleteRoleService, GetAllRolesService } from '../../services/RoleService';
 
 
 const RoleList: React.FC = () => {
@@ -19,10 +20,14 @@ const RoleList: React.FC = () => {
 
     const fetchRoles = async () => {
         try {
-            const response = await axios.get('/Role/GetAll');
-            console.log(response.data);
-
-            setRoles(response.data);
+            const response = await GetAllRolesService();
+            console.log(response);
+            if (response.success) {
+                // toast.success(response.message);
+                setRoles(response.data.roles);
+            } else {
+                toast.error(response.message);
+            }
         } catch (error) {
             console.error('Error fetching roles:', error);
         }
@@ -42,9 +47,15 @@ const RoleList: React.FC = () => {
 
     const handleSaveRole = async (role: any) => {
         try {
-            await axios.post('/Role/CreateOrUpdate', role);
-            fetchRoles(); // Refresh the roles list
-            handleCloseModal(); // Close the modal
+            //
+            const response = await CreateOrUpdateRoleService(role);
+            if (response.success) {
+                toast.success(response.message);
+                fetchRoles(); // Refresh the roles list
+                handleCloseModal(); // Close the modal
+            } else {
+                toast.error(response.message);
+            }
         } catch (error) {
             console.error('Error saving role:', error);
         }
@@ -53,9 +64,13 @@ const RoleList: React.FC = () => {
     const handleDeleteRole = async (roleId: string) => {
         if (window.confirm('Are you sure you want to delete this role?')) {
             try {
-                await axios.delete(`/Role/Delete/${roleId}`);
-                fetchRoles(); // Refresh the roles list after deletion
-                toast.success('Role deleted successfully!');
+                const response = await DeleteRoleService(roleId);
+                if (response.success) {
+                    toast.success(response.message);
+                    fetchRoles(); // Refresh the roles list after deletion
+                } else {
+                    toast.error(response.message);
+                }
             } catch (error) {
                 console.error('Error deleting role:', error);
                 toast.error('Error deleting role.');

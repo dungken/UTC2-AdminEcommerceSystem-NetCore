@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { CreateOrUpdatePermissionService } from '../../services/RoleService';
 
 interface PermissionModalProps {
     isOpen: boolean;
@@ -26,20 +27,21 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, onPe
         }
 
         try {
-            const response = await axios.post('/Permission/Create', {
+            const permissionData = {
                 name: permissionName,
                 description: permissionDesc,
                 rolePermissions: []
-            });
-            console.log(response);
+            };
 
-            if (response.status !== 201) {
-                toast.error('Error creating permission');
-                return;
+            const response = await CreateOrUpdatePermissionService(permissionData);
+            if (response.success) {
+                toast.success(response.message);
+                onPermissionAdded();
+                onClose();
+            } else {
+                toast.error(response.message);
             }
-            toast.success('Permission created successfully');
-            onPermissionAdded();
-            onClose();
+
         } catch (error) {
             console.error('Error creating permission:', error);
         }

@@ -4,6 +4,7 @@ import EditPermissionModal from './EditPermissionModal';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import PermissionModal from './PermissionModal';
+import { DeletePermissionService, GetAllPermissionsService } from '../../services/RoleService';
 
 const PermissionList: React.FC = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -19,8 +20,13 @@ const PermissionList: React.FC = () => {
 
     const fetchPermissions = async () => {
         try {
-            const response = await axios.get('/Permission/GetAll');
-            setPermissions(response.data);
+            const response = await GetAllPermissionsService();
+            if (response.success) {
+                // toast.success(response.message);
+                setPermissions(response.data.permissions);
+            } else {
+                toast.error(response.message);
+            }
         } catch (error) {
             console.error('Error fetching permissions:', error);
         }
@@ -48,14 +54,14 @@ const PermissionList: React.FC = () => {
 
         if (permissionToDelete) {
             try {
-                const response = await axios.delete(`/Permission/Delete/${permissionToDelete.permissionId}`);
-                if (response.status !== 204) {
-                    toast.error('Error deleting permission');
-                    return;
+                const response = await DeletePermissionService(permissionToDelete.permissionId);
+                if (response.success) {
+                    toast.success(response.message);
+                    fetchPermissions();
+                    setPermissionToDelete(null);
+                } else {
+                    toast.error(response.message);
                 }
-                toast.success('Permission deleted successfully');
-                setPermissions(prevPermissions => prevPermissions.filter(p => p.permissionId !== permissionToDelete.permissionId));
-                setPermissionToDelete(null);
             } catch (error) {
                 console.error('Error deleting permission:', error);
             }

@@ -7,6 +7,7 @@ interface BaseFieldProps {
     placeholder?: string;
     type?: string;
     value?: string;
+    defaultValue?: string;
     onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
     disabled?: boolean;
 }
@@ -18,6 +19,7 @@ const BaseField: React.FC<BaseFieldProps> = ({
     placeholder,
     type = "text",
     value,
+    defaultValue,
     onChange,
     disabled,
 }) => (
@@ -32,6 +34,7 @@ const BaseField: React.FC<BaseFieldProps> = ({
             onChange={onChange}
             disabled={disabled}
             placeholder={placeholder}
+            defaultValue={defaultValue}
         />
     </div>
 );
@@ -100,10 +103,11 @@ const ConfirmPasswordField: React.FC<{
 
 interface PhoneNumberFieldProps {
     value?: string;
+    defaultValue?: string;
     onChange?: React.ChangeEventHandler<HTMLInputElement>;
 }
 
-const PhoneNumberField: React.FC<PhoneNumberFieldProps> = ({ value, onChange }) => (
+const PhoneNumberField: React.FC<PhoneNumberFieldProps> = ({ value, defaultValue, onChange }) => (
     <div className="col-md-6">
         <label htmlFor="modalEditUserPhone" className="form-label">Phone Number</label>
         <div className="input-group">
@@ -115,6 +119,7 @@ const PhoneNumberField: React.FC<PhoneNumberFieldProps> = ({ value, onChange }) 
                 name="phoneNumber"
                 placeholder="032 123 4567"
                 value={value}
+                defaultValue={defaultValue}
                 onChange={onChange}
             />
         </div>
@@ -130,6 +135,7 @@ interface SelectFieldProps {
     id: string;
     name?: string;
     value?: string;
+    defaultValue?: string;
     onChange?: React.ChangeEventHandler<HTMLSelectElement>;
     options: { value: string; label: string }[];
     disabled?: boolean;
@@ -140,6 +146,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
     id,
     name,
     value,
+    defaultValue,
     onChange,
     options,
     disabled = false,
@@ -151,6 +158,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
             className="form-select"
             name={name}
             value={value}
+            defaultValue={defaultValue}
             onChange={onChange}
             disabled={disabled}
         >

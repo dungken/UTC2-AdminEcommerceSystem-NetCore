@@ -24,7 +24,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
             <div>
 
             </div>
-            <div className="d-flex justify-content-center mt-3">
+            <div className="d-flex justify-content-center m-3">
                 <button className="btn btn-outline-primary me-2" disabled={currentPage === 1} onClick={handlePrevious}>
                     Previous
                 </button>

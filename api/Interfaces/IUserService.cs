@@ -24,6 +24,8 @@ namespace api.Services
         Task<IList<Guid>> GetUserRolesAsync(User user);
         Task<bool> UpdatePersonalInfoAsync(User user, UpdatePersonalInfoDto updatePersonalInfoDto);
         Task<bool> SoftDeleteUserAsync(User user);
+        Task<bool> BulkSoftDeleteUserAsync(List<string> userIds);
+        Task<bool> BulkRestoreUserAsync(List<string> userIds);
         Task<bool> Restore(User user);
         Task<bool> UpdateUserAsync(User user, UpdateUserDto userDto);
         Task<IdentityResult> AssignRoleToUserAsync(Guid userId, Guid roleId);

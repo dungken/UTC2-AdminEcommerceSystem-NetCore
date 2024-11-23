@@ -242,15 +242,15 @@ namespace api.Services
                 Gender = userDto.Gender,
                 ProvinceCode = userDto.ProvinceCode,
                 DistrictCode = userDto.DistrictCode,
-                CommuneCode = userDto.CommuneCode
+                CommuneCode = userDto.CommuneCode,
+                Status = userDto.Status
             };
 
             var result = await _userManager.CreateAsync(user, userDto.Password);
             if (!result.Succeeded)
                 return false;
 
-            // Assign the default role of "User"
-            var roleResult = await _userManager.AddToRoleAsync(user, "Customer");
+            var roleResult = await _userManager.AddToRoleAsync(user, userDto.RoleName);
             if (!roleResult.Succeeded)
                 return false;
 
@@ -292,12 +292,57 @@ namespace api.Services
 
             // Soft delete the user by setting the IsDeleted flag to true
             user.IsDeleted = true;
+            user.Status = "Inactive";
 
             await _userManager.UpdateAsync(user); // Mark the entity as modified
             await _context.SaveChangesAsync(); // Persist changes to the database
 
             return true;
         }
+        public async Task<bool> BulkSoftDeleteUserAsync(List<string> userIds)
+        {
+            if (userIds == null || userIds.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (var userId in userIds)
+            {
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user != null)
+                {
+                    user.IsDeleted = true;
+                    user.Status = "Inactive";
+                    await _userManager.UpdateAsync(user);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        public async Task<bool> BulkRestoreUserAsync(List<string> userIds)
+        {
+            if (userIds == null || userIds.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (var userId in userIds)
+            {
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user != null)
+                {
+                    user.IsDeleted = false;
+                    user.Status = "Active";
+                    await _userManager.UpdateAsync(user);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+
 
         public async Task<bool> UpdateUserAsync(User user, UpdateUserDto userDto)
         {
@@ -317,8 +362,12 @@ namespace api.Services
             user.DistrictCode = userDto.DistrictCode;
             user.CommuneCode = userDto.CommuneCode;
             user.FullAddress = userDto.FullAddress;
+            user.Status = userDto.Status;
             // Save changes
             var result = await _userManager.UpdateAsync(user);
+            // Update user role
+            await UpdateRoleToUserAsync(user.Id, userDto.RoleName);
+
             await _context.SaveChangesAsync();
             return result.Succeeded;
         }
@@ -332,6 +381,14 @@ namespace api.Services
                 throw new ArgumentException("User or Role not found.");
 
             return await _userManager.AddToRoleAsync(user, role.Name);
+        }
+
+        public async Task<IdentityResult> UpdateRoleToUserAsync(Guid userId, string roleName)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            var roles = await _userManager.GetRolesAsync(user);
+            await _userManager.RemoveFromRolesAsync(user, roles);
+            return await _userManager.AddToRoleAsync(user, roleName);
         }
 
         public async Task<bool> IsUserExistingAsync(string email, string userName)
@@ -348,6 +405,7 @@ namespace api.Services
 
             // Set IsDeleted to false to "restore" the user
             user.IsDeleted = false;
+            user.Status = "Active";
 
             // Attach user to the context if it's not already being tracked
             _context.Users.Attach(user);

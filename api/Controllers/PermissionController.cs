@@ -26,7 +26,7 @@ namespace api.Controllers
         public async Task<ActionResult<IEnumerable<Permission>>> GetPermissions()
         {
             var permissions = await _permissionService.GetPermissionsAsync();
-            return Ok(_baseResponseService.CreateSuccessResponse(permissions, "Get permissions successfully!"));
+            return Ok(_baseResponseService.CreateSuccessResponse(new { permissions = permissions }, "Get permissions successfully!"));
         }
 
         ///////////////////////////////// api/Permission/GetAllWithRoles /////////////////////////////////

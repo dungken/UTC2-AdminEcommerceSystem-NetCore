@@ -20,6 +20,8 @@ interface User {
     fullAddress: string;
     phoneNumber: string;
     dateOfBirth: string;
+    status: 'Active' | 'Pending' | 'Inactive';
+    roleName: string;
     createdAt: string;
     updatedAt: string;
 }

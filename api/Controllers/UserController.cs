@@ -118,6 +118,8 @@ namespace api.Controllers
         public async Task<IActionResult> UploadImage([FromForm] IFormFile file, [FromForm] string? username = null)
         {
             // Get the user by username if provided, otherwise get the current logged-in user
+            Console.WriteLine("FIND USERNAME IS: " + username);
+
             var user = username != null ? await _userManager.FindByNameAsync(username) : await _jwtService.GetUserFromTokenAsync();
 
             // Check if the user is found
@@ -217,7 +219,7 @@ namespace api.Controllers
 
             // Truy vấn lấy tất cả người dùng chưa bị xóa, bao gồm UserRoles và RolePermissions cho mỗi User
             var query = _userManager.Users
-                .Where(u => !u.IsDeleted)
+                // .Where(u => !u.IsDeleted)
                 .Include(u => u.UserRoles)
                     .ThenInclude(ur => ur.Role)
                         .ThenInclude(r => r.RolePermissions)
@@ -251,8 +253,10 @@ namespace api.Controllers
                     u.FirstName,
                     u.LastName,
                     u.Gender,
+                    u.PhoneNumber,
                     u.DateOfBirth,
                     u.ProfilePicture,
+                    u.Status,
                     // Including UserRoles and RolePermissions for each user
                     UserRoles = u.UserRoles.Select(ur => new
                     {
@@ -425,6 +429,46 @@ namespace api.Controllers
             return Ok(_baseReponseService.CreateSuccessResponse(
                 new { User = user },
                 "Account deleted successfully."
+            ));
+        }
+        /////////////////////// api/User/BulkSoftDelete ///////////////////////
+        [HttpPost("BulkSoftDelete")]
+        public async Task<IActionResult> BulkSoftDeleteUser([FromBody] List<string> userIds)
+        {
+            var userFromToken = _jwtService.GetUserRolesAndPermissionsFromToken();
+            if (userFromToken.UserName == null)
+            {
+                return Unauthorized(_baseReponseService.CreateErrorResponse<object>("Invalid token or username claim not found."));
+            }
+
+            var result = await _userService.BulkSoftDeleteUserAsync(userIds);
+            if (!result)
+            {
+                return BadRequest(_baseReponseService.CreateErrorResponse<object>("Failed to delete users."));
+            }
+            return Ok(_baseReponseService.CreateSuccessResponse(
+                new { DeletedUsers = userIds },
+               "Users successfully soft deleted."
+            ));
+        }
+        /////////////////////// api/User/BulkRestore ///////////////////////
+        [HttpPost("BulkRestore")]
+        public async Task<IActionResult> BulkRestoreUser([FromBody] List<string> userIds)
+        {
+            var userFromToken = _jwtService.GetUserRolesAndPermissionsFromToken();
+            if (userFromToken.UserName == null)
+            {
+                return Unauthorized(_baseReponseService.CreateErrorResponse<object>("Invalid token or username claim not found."));
+            }
+
+            var result = await _userService.BulkRestoreUserAsync(userIds);
+            if (!result)
+            {
+                return BadRequest(_baseReponseService.CreateErrorResponse<object>("Failed to restore users."));
+            }
+            return Ok(_baseReponseService.CreateSuccessResponse(
+                new { RestoreResult = userIds },
+               "Users successfully restored."
             ));
         }
 

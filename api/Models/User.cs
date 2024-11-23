@@ -20,6 +20,7 @@ namespace api.Models
         public bool IsEmailVerified { get; set; } = false;
         public bool IsDeleted { get; set; } = false;
         public bool IsPhoneNumberVerified { get; set; } = false;
+        public string Status { get; set; } = "Active";
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { CreateOrUpdatePermissionService } from '../../services/RoleService';
 
 interface EditPermissionModalProps {
     isOpen: boolean;
@@ -37,19 +38,20 @@ const EditPermissionModal: React.FC<EditPermissionModalProps> = ({ isOpen, onClo
         }
 
         try {
-            const response = await axios.put(`Permission/Update/${permission?.permissionId}`, {
+            const permissionDateUpdate = {
                 permissionId: permission?.permissionId,
                 name: permissionName,
                 description: permissionDesc,
                 rolePermissions: []
-            });
-            if (response.status !== 204) {
-                console.error('Error updating permission');
-                return;
+            };
+            const response = await CreateOrUpdatePermissionService(permissionDateUpdate);
+            if (response.success) {
+                toast.success(response.message);
+                onPermissionUpdated();
+                onClose();
+            } else {
+                toast.error(response.message);
             }
-            toast.success('Permission updated successfully');
-            onPermissionUpdated();
-            onClose();
         } catch (error) {
             console.error('Error updating permission:', error);
         }

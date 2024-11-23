@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toast } from 'react-toastify';
 
 export const getAuthHeader = () => {
     const token = localStorage.getItem('token');
@@ -9,9 +10,19 @@ export const getAuthHeader = () => {
 
 
 export const CreateUserService = async (user: any) => {
-    const response = await axios.post('/User/Create', user, { headers: getAuthHeader() });
-    return response.data;
+    try {
+        const response = await axios.post('/User/Create', user, { headers: getAuthHeader() });
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            return error.response.data;
+        }
+        throw error;
+
+    }
 };
+
+
 
 export const GetPersonalInfoService = async () => {
     try {
@@ -53,6 +64,28 @@ export const DeleteAccountService = async (username?: string) => {
     }
 }
 
+export const DeleteUsersService = async (userIds: string[]) => {
+    try {
+        const response = await axios.post('/User/BulkSoftDelete', userIds, { headers: getAuthHeader() });
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            return error.response.data;
+        }
+    }
+}
+
+export const RestoreUsersService = async (userIds: string[]) => {
+    try {
+        const response = await axios.post('/User/BulkRestore', userIds, { headers: getAuthHeader() });
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            return error.response.data;
+        }
+    }
+}
+
 export const GetAllUserService = async (page: number, pageSize: number) => {
     try {
         const response = await axios.get(`/User/GetAll?page=${page}&pageSize=${pageSize}`);
@@ -67,7 +100,21 @@ export const GetAllUserService = async (page: number, pageSize: number) => {
 };
 
 export const UpdateUserService = async (user: any) => {
-    const response = await axios.put('/User/Update', user, { headers: getAuthHeader() });
-    return response.data;
+    console.log("User in User Service:", user);
+
+    try {
+        const response = await axios.post('/User/Update', user, { headers: getAuthHeader() });
+        if (response.data) {
+            toast.success('User updated successfully.');
+        }
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response && error.response.data) {
+            toast.error(error.response.data.message || 'Failed to update user.');
+        } else {
+            toast.error('An error occurred while updating user.');
+        }
+        throw error;
+    }
 };
 
