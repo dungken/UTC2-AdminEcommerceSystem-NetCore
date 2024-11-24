@@ -79,11 +79,11 @@ namespace api.Controllers
             }
 
             var result = await _productService.UpdateProductAsync(productDto);
-            if (!result)
+            if (result == null)
             {
                 return NotFound(_baseReponseService.CreateErrorResponse<object>("Product not found."));
             }
-            return NoContent();
+            return Ok(_baseReponseService.CreateSuccessResponse(new { product = result }, "Product updated successfully."));
         }
 
 
@@ -91,12 +91,13 @@ namespace api.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteProduct(Guid id)
         {
+            Console.WriteLine("DeleteProduct: " + id);
             var result = await _productService.DeleteProductAsync(id);
             if (!result)
             {
                 return NotFound(_baseReponseService.CreateErrorResponse<object>("Product not found."));
             }
-            return NoContent();
+            return Ok(_baseReponseService.CreateSuccessResponse<object>(null, "Product deleted successfully."));
         }
     }
 

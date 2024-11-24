@@ -12,7 +12,7 @@ namespace api.Services
         Task<ProductDTO> GetProductByIdAsync(Guid id);
         Task<List<ProductDTO>> GetProductsByCategoryAsync(Guid cateId);
         Task<ProductDTO> CreateProductAsync(ProductDTO ProductDTO);
-        Task<bool> UpdateProductAsync(ProductDTO productDto);
+        Task<ProductDTO> UpdateProductAsync(ProductDTO productDto);
         Task<bool> DeleteProductAsync(Guid id);
     }
 }

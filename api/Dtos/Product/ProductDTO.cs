@@ -21,6 +21,7 @@ namespace api.Dtos.Product
         public DateTime UpdatedAt { get; set; }
         public Guid CategoryId { get; set; }
         public string Status { get; set; }
+        public byte[]? RowVersion { get; set; }
 
         public List<ColorDTO> Colors { get; set; } = new List<ColorDTO>();
         public List<SizeDTO> Sizes { get; set; } = new List<SizeDTO>();

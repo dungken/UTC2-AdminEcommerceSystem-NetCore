@@ -13,6 +13,7 @@ const ProductList = () => {
     const fetchProducts = async () => {
       try {
         const response = await GetAllProductsService();
+
         setProducts(response.data);
         setLoading(false); // Set loading to false once products are fetched
       } catch (error) {
@@ -40,6 +41,11 @@ const ProductList = () => {
     return <div>{error}</div>; // Show error message if there's an error
   }
 
+  const handleDeleteProduct = (id: string) => {
+    setProducts((prevProducts) => prevProducts.filter((product) => product.id !== id));
+  };
+
+
   return (
     <div>
       <div
@@ -51,7 +57,7 @@ const ProductList = () => {
         }}
       >
         {products.slice(0, visibleCount).map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <ProductCard key={product.id} product={product} onDelete={handleDeleteProduct} />
         ))}
       </div>
 

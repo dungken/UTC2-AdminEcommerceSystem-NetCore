@@ -4,11 +4,12 @@ import { ImageDTO } from './types';
 
 interface ProductImageGalleryProps {
     selectedImages: { file: File; altText: string }[]; // Updated type
+    imagesData?: ImageDTO[];
     setSelectedImages: React.Dispatch<React.SetStateAction<{ file: File; altText: string }[]>>;
 }
 
 
-const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({ selectedImages, setSelectedImages }) => {
+const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({ selectedImages, imagesData, setSelectedImages }) => {
     const initialImages: ImageDTO[] = [
         { url: 'https://via.placeholder.com/300', altText: 'Image 1' },
         { url: 'https://via.placeholder.com/300', altText: 'Image 2' },
@@ -46,8 +47,12 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({ selectedImage
 
     // Display thumbnails based on selectedImages or fallback to initial images
     const displayImages = selectedImages.length > 0
-        ? selectedImages.map((img) => ({ url: URL.createObjectURL(img.file), altText: img.altText }))
+        ? selectedImages.map((img) => ({
+            url: img.file instanceof File ? URL.createObjectURL(img.file) : '',
+            altText: img.altText,
+        }))
         : images;
+
 
     return (
         <div className="product-gallery">
@@ -58,6 +63,18 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({ selectedImage
 
             {/* Thumbnails */}
             <div className="thumbnail-row">
+                {
+                    imagesData && imagesData.length > 0 && imagesData.map((image, index) => (
+                        <div key={index} className="thumbnail-frame">
+                            <img
+                                src={image.url}
+                                alt={image.altText}
+                                onClick={() => setMainImage(image)}
+                                className="thumbnail active-thumbnail"
+                            />
+                        </div>
+                    ))
+                }
                 {displayImages.map((image, index) => (
                     <div key={index} className="thumbnail-frame">
                         <img

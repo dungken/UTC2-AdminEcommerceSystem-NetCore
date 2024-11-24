@@ -13,10 +13,15 @@ namespace api.Services
     public class ProductService : IProductService
     {
         private readonly ApplicationDbContext _context;
+        private readonly ILogger<ProductService> _logger;
 
-        public ProductService(ApplicationDbContext context)
+        public ProductService(
+            ApplicationDbContext context,
+            ILogger<ProductService> logger
+        )
         {
             _context = context;
+            _logger = logger;
         }
 
         // Get all products
@@ -39,6 +44,7 @@ namespace api.Services
                 Price = p.Price,
                 StockQuantity = p.StockQuantity,
                 CategoryId = p.Category.Id,
+                RowVersion = p.RowVersion,
                 Colors = p.Colors.Select(c => new ColorDTO
                 {
                     // Id = c.Id,
@@ -97,20 +103,21 @@ namespace api.Services
                 StockQuantity = product.StockQuantity,
                 CategoryId = product.Category.Id,
                 Status = product.Status,
+                RowVersion = product.RowVersion,
                 Colors = product.Colors.Select(c => new ColorDTO
                 {
-                    // Id = c.Id,
+                    Id = c.Id,
                     Name = c.Name,
                     ColorCode = c.ColorCode
                 }).ToList(),
                 Sizes = product.Sizes.Select(s => new SizeDTO
                 {
-                    // Id = s.Id,
+                    Id = s.Id,
                     Name = s.Name
                 }).ToList(),
                 Images = product.Images.Select(i => new ImageDTO
                 {
-                    // Id = i.Id,
+                    Id = i.Id,
                     Url = i.Url,
                     AltText = i.AltText
                 }).ToList(),
@@ -193,27 +200,149 @@ namespace api.Services
         }
 
 
-        // Update product
-        public async Task<bool> UpdateProductAsync(ProductDTO productDto)
+        public async Task<ProductDTO> UpdateProductAsync(ProductDTO productDto)
         {
-            var product = await _context.Products.FindAsync(productDto.Id);
-            if (product == null)
+            if (productDto == null)
+                throw new ArgumentNullException(nameof(productDto), "Product data is required.");
+
+            const int maxRetries = 3; // Max number of retries
+            int attempt = 0;
+            bool success = false;
+
+            while (attempt < maxRetries && !success)
             {
-                return false;
+                try
+                {
+                    // Fetch the product from the database based on the ID, including RowVersion for concurrency control
+                    var product = await _context.Products
+                        .Include(p => p.Colors)  // Including related colors
+                        .Include(p => p.Sizes)   // Including related sizes
+                        .Include(p => p.Images)  // Including related images
+                        .FirstOrDefaultAsync(p => p.Id == productDto.Id);
+
+                    _logger.LogInformation($"Updating product with ID {productDto.Id}");
+                    _logger.LogInformation($"Row Version Product: {BitConverter.ToString(product.RowVersion)}");
+                    _logger.LogInformation($"Row Version Product DTO: {BitConverter.ToString(productDto.RowVersion)}");
+
+                    if (product == null)
+                        throw new KeyNotFoundException($"Product with ID {productDto.Id} not found.");
+
+                    // Compare the RowVersion from the database with the one sent by the client
+                    if (!product.RowVersion.SequenceEqual(productDto.RowVersion))
+                    {
+                        // If RowVersion doesn't match, throw concurrency exception
+                        throw new DbUpdateConcurrencyException("The product has been modified by another user.");
+                    }
+
+
+                    _logger.LogInformation("Updating product properties...");
+
+
+                    // Update product properties
+                    product.Name = productDto.Name;
+                    product.Description = productDto.Description;
+                    product.Price = productDto.Price;
+                    product.StockQuantity = productDto.StockQuantity;
+                    product.CategoryId = productDto.CategoryId;
+                    product.Status = productDto.Status;
+                    product.UpdatedAt = DateTime.UtcNow;
+
+                    // Update Colors (assuming ColorDTO contains color details)
+                    UpdateProductColors(product, productDto.Colors);
+
+                    // Update Sizes (assuming SizeDTO contains size details)
+                    UpdateProductSizes(product, productDto.Sizes);
+
+                    // Update Images (assuming ImageDTO contains image URLs or paths)
+                    UpdateProductImages(product, productDto.Images);
+
+                    // Save changes to the database, this will automatically check the RowVersion
+                    await _context.SaveChangesAsync();
+
+                    success = true; // If no error, mark as successful
+
+                    // Return the updated DTO (include the new RowVersion from the DB)
+                    productDto.RowVersion = product.RowVersion; // Update RowVersion in DTO
+                    return productDto;
+
+                }
+                catch (DbUpdateConcurrencyException ex)
+                {
+                    attempt++;
+
+                    // Log the exception for debugging
+                    _logger.LogError($"Attempt {attempt} failed: Concurrency error while updating product. Retrying...");
+
+                    if (attempt >= maxRetries)
+                    {
+                        // After max retries, throw an exception
+                        throw new Exception("The product was updated or deleted by another process. Please try again later.");
+                    }
+
+                    // Wait before retrying (could be adjusted based on needs)
+                    await Task.Delay(1000); // 1 second delay before retry
+                }
             }
 
-            product.Name = productDto.Name;
-            product.Description = productDto.Description;
-            product.Price = productDto.Price;
-            product.StockQuantity = productDto.StockQuantity;
-            product.CategoryId = productDto.CategoryId;
-            product.UpdatedAt = DateTime.Now;
-
-            _context.Products.Update(product);
-            await _context.SaveChangesAsync();
-
-            return true;
+            return productDto; // This line is not reached unless retry is successful
         }
+
+
+
+        // Method to update the product colors
+        private void UpdateProductColors(Product product, List<ColorDTO> colors)
+        {
+            // Remove all existing colors
+            product.Colors.Clear();
+
+            // Add the new colors
+            foreach (var color in colors)
+            {
+                var productColor = new Color
+                {
+                    Name = color.Name,
+                    ColorCode = color.ColorCode // Assuming color code is part of the DTO
+                };
+                product.Colors.Add(productColor);
+            }
+        }
+
+        // Method to update the product sizes
+        private void UpdateProductSizes(Product product, List<SizeDTO> sizes)
+        {
+            // Remove all existing sizes
+            product.Sizes.Clear();
+
+            // Add the new sizes
+            foreach (var size in sizes)
+            {
+                var productSize = new Size
+                {
+                    Name = size.Name
+                };
+                product.Sizes.Add(productSize);
+            }
+        }
+
+        // Method to update the product images
+        private void UpdateProductImages(Product product, List<ImageDTO> images)
+        {
+            // Remove all existing images
+            product.Images.Clear();
+
+            // Add the new images
+            foreach (var image in images)
+            {
+                var productImage = new Image
+                {
+                    Url = image.Url,
+                    AltText = image.AltText // Assuming alt text is part of the DTO
+                };
+                product.Images.Add(productImage);
+            }
+        }
+
+
 
         // Delete product
         public async Task<bool> DeleteProductAsync(Guid id)

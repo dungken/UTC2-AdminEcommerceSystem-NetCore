@@ -1,15 +1,51 @@
 import React, { useState } from "react";
 import { Product } from "./types";
+import { Link } from "react-router-dom";
+import { DeleteProductService } from "../../services/ProductService";
+import { toast } from "react-toastify";
 
-const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
+const ProductCard: React.FC<{ product: Product; onDelete: (id: string) => void }> = ({
+    product,
+    onDelete,
+}) => {
+
+    // console.log(product.id);
+
     const [isExpanded, setIsExpanded] = useState(false);
 
     const handleWatchMoreProductClick = () => {
         setIsExpanded((prev) => !prev);
     };
 
+    const handleDeleteProductClick = async () => {
+        const confirmDelete = window.confirm(
+            `Are you sure you want to delete the product: ${product.name}?`
+        );
 
+        if (confirmDelete) {
+            // console.log("Deleting product:", product.id);
 
+            try {
+                const response = await DeleteProductService(product.id);
+                console.log(response);
+
+                if (response.success) {
+                    toast.success("Product deleted successfully");
+                    if (product.id) {
+                        onDelete(product.id);
+                    } else {
+                        toast.error("Product ID is undefined");
+                    }
+                } else {
+                    toast.error("Failed to delete product");
+                }
+
+            } catch (error) {
+                console.error("Error deleting product:", error);
+                alert("Failed to delete product");
+            }
+        }
+    };
 
     return (
         <div
@@ -68,19 +104,7 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
                     </p>
                 )}
             </div>
-            <h2
-                style={{
-                    fontSize: "18px",
-                    fontWeight: "600",
-                    color: "#333",
-                    marginBottom: "8px",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                }}
-            >
-                {product.name}
-            </h2>
+            <Link to={`edit/${product.id}`}>{product.name}</Link>
             <div
                 dangerouslySetInnerHTML={{ __html: product.description }}
                 style={{
@@ -203,6 +227,24 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
                 }}
             >
                 {isExpanded ? "Show Less" : "Watch More"}
+            </button>
+
+            {/* Delete Button */}
+            <button
+                onClick={handleDeleteProductClick}
+                style={{
+                    padding: "8px 16px",
+                    background: "#e63946",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    marginTop: "12px",
+                    width: "100%",
+                }}
+            >
+                Delete Product
             </button>
         </div>
     );

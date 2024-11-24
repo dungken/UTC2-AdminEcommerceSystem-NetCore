@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
-import { GetProductsById } from '../../services/ProductService';
+import { GetProductById } from '../../services/ProductService';
 
 
 const Container = styled.div`
@@ -121,98 +121,98 @@ const Sizes = styled.div`
 
 
 const ProductDetail = () => {
-    const { productId } = useParams<{ productId: string }>(); // Get productId from URL
-    const [product, setProduct] = useState<any | null>(null);
+  const { productId } = useParams<{ productId: string }>(); // Get productId from URL
+  const [product, setProduct] = useState<any | null>(null);
 
-    useEffect(() => {
-        // Fetch the product details using productId
-        const fetchProduct = async () => {
-            try {
-                const response = await GetProductsById(productId);
-                console.log(response.data);
+  useEffect(() => {
+    // Fetch the product details using productId
+    const fetchProduct = async () => {
+      try {
+        const response = await GetProductById(productId);
+        console.log(response.data);
 
-                setProduct(response.data);
-            } catch (error) {
-                console.error('Failed to fetch product:', error);
-            }
-        };
+        setProduct(response.data);
+      } catch (error) {
+        console.error('Failed to fetch product:', error);
+      }
+    };
 
-        if (productId) {
-            fetchProduct();
-        }
-    }, [productId]);
-
-    if (!product) {
-        return <div>Loading...</div>;
+    if (productId) {
+      fetchProduct();
     }
+  }, [productId]);
 
-    const formattedPrice = new Intl.NumberFormat('vi-VN', {
-        style: 'currency',
-        currency: 'VND',
-    }).format(product.price);
+  if (!product) {
+    return <div>Loading...</div>;
+  }
 
-    return (
-        <Container>
-            <Header>
-                <Title>{product.name}</Title>
-                <Price>{formattedPrice}</Price>
-            </Header>
-            <Grid>
-                <LeftColumn>
-                    <ImagesContainer>
-                        {product.images.map((image: any, index: number) => (
-                            <img key={index} src={image.url} alt={image.altText || 'Product Image'} />
-                        ))}
-                    </ImagesContainer>
-                </LeftColumn>
-                <RightColumn>
-                    <Section>
-                        <h3>Description</h3>
-                        <Description dangerouslySetInnerHTML={{ __html: product.description }} />
-                    </Section>
-                    <Section>
-                        <h3>Details</h3>
-                        <List>
-                            <li>
-                                <strong>Stock Quantity:</strong> {product.stockQuantity}
-                            </li>
-                            <li>
-                                <strong>Status:</strong> {product.status || 'N/A'}
-                            </li>
-                            <li>
-                                <strong>Created At:</strong>{' '}
-                                {new Date(product.createdAt).toLocaleDateString('en-GB')}
-                            </li>
-                            <li>
-                                <strong>Updated At:</strong>{' '}
-                                {new Date(product.updatedAt).toLocaleDateString('en-GB')}
-                            </li>
-                        </List>
-                    </Section>
-                    <Section>
-                        <h3>Colors</h3>
-                        <Colors>
-                            {product.colors.map((color: any, index: number) => (
-                                <span
-                                    key={index}
-                                    style={{ backgroundColor: color.colorCode }}
-                                    title={color.name}
-                                ></span>
-                            ))}
-                        </Colors>
-                    </Section>
-                    <Section>
-                        <h3>Sizes</h3>
-                        <Sizes>
-                            {product.sizes.map((size: any, index: number) => (
-                                <span key={index}>{size.name}</span>
-                            ))}
-                        </Sizes>
-                    </Section>
-                </RightColumn>
-            </Grid>
-        </Container>
-    );
+  const formattedPrice = new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+  }).format(product.price);
+
+  return (
+    <Container>
+      <Header>
+        <Title>{product.name}</Title>
+        <Price>{formattedPrice}</Price>
+      </Header>
+      <Grid>
+        <LeftColumn>
+          <ImagesContainer>
+            {product.images.map((image: any, index: number) => (
+              <img key={index} src={image.url} alt={image.altText || 'Product Image'} />
+            ))}
+          </ImagesContainer>
+        </LeftColumn>
+        <RightColumn>
+          <Section>
+            <h3>Description</h3>
+            <Description dangerouslySetInnerHTML={{ __html: product.description }} />
+          </Section>
+          <Section>
+            <h3>Details</h3>
+            <List>
+              <li>
+                <strong>Stock Quantity:</strong> {product.stockQuantity}
+              </li>
+              <li>
+                <strong>Status:</strong> {product.status || 'N/A'}
+              </li>
+              <li>
+                <strong>Created At:</strong>{' '}
+                {new Date(product.createdAt).toLocaleDateString('en-GB')}
+              </li>
+              <li>
+                <strong>Updated At:</strong>{' '}
+                {new Date(product.updatedAt).toLocaleDateString('en-GB')}
+              </li>
+            </List>
+          </Section>
+          <Section>
+            <h3>Colors</h3>
+            <Colors>
+              {product.colors.map((color: any, index: number) => (
+                <span
+                  key={index}
+                  style={{ backgroundColor: color.colorCode }}
+                  title={color.name}
+                ></span>
+              ))}
+            </Colors>
+          </Section>
+          <Section>
+            <h3>Sizes</h3>
+            <Sizes>
+              {product.sizes.map((size: any, index: number) => (
+                <span key={index}>{size.name}</span>
+              ))}
+            </Sizes>
+          </Section>
+        </RightColumn>
+      </Grid>
+    </Container>
+  );
 };
 
 export default ProductDetail;

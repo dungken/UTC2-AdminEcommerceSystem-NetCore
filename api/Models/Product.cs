@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -19,6 +20,10 @@ namespace api.Models
         // Foreign Key
         public Guid CategoryId { get; set; } // Linked category ID
         public Category Category { get; set; }
+
+
+        [Timestamp] // This attribute marks the property for concurrency tracking
+        public byte[] RowVersion { get; set; }
 
         // Navigation Properties
         public ICollection<Color> Colors { get; set; } = new List<Color>();

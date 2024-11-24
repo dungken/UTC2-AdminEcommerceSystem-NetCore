@@ -47,6 +47,7 @@ import DiscountCodeManagement from './components/Product/DiscountCodeManagement'
 import InventoryManagement from './components/Product/InventoryManagement';
 import OrderManagementPage from './components/Order/OrderManagementPage';
 import ProductDetail from './components/Product/ProductDetail';
+import ProductFormEdit from './components/Product/ProductFormEdit';
 
 const App: React.FC = () => {
   return (
@@ -93,6 +94,7 @@ const App: React.FC = () => {
                           <Route path="/product" element={<ProtectedRoute><ProductList /></ProtectedRoute>} />
                           <Route path="/product-detail/:productId" element={<ProtectedRoute><ProductDetail /></ProtectedRoute>} />
                           <Route path="/product/create" element={<ProtectedRoute><ProductManagement /></ProtectedRoute>} />
+                          <Route path="/product/edit/:productId" element={<ProtectedRoute><ProductFormEdit /></ProtectedRoute>} />
                           <Route path="/discount" element={<ProtectedRoute><DiscountCodeManagement /></ProtectedRoute>} />
                           <Route path="/inventory" element={<ProtectedRoute><InventoryManagement /></ProtectedRoute>} />
 

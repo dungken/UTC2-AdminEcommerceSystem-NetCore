@@ -97,7 +97,7 @@ export const GetProductsByCategory = async (categoryId: any) => {
 }
 
 
-export const GetProductsById = async (id: any) => {
+export const GetProductById = async (id: any) => {
     try {
         const response = await axios.get(`/Products/${id}`, { headers: getAuthHeader() });
         return response.data;
@@ -183,3 +183,28 @@ export const UploadMultipleFileService = async (
         throw new Error(error.response?.data?.Message || "Failed to upload files.");
     }
 };
+
+
+export const UpdateProductService = async (id: any, productData: any) => {
+    try {
+        const response = await axios.put(`/Products/${id}`, productData, { headers: getAuthHeader() });
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            return error.response.data;
+        }
+        throw error;
+    }
+}
+
+export const DeleteProductService = async (id: any) => {
+    try {
+        const response = await axios.delete(`/Products/${id}`, { headers: getAuthHeader() });
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            return error.response.data;
+        }
+        throw error;
+    }
+}

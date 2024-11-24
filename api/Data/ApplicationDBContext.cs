@@ -108,6 +108,10 @@ namespace api.Data
                 .HasForeignKey(p => p.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<Product>()
+                .Property(p => p.RowVersion)
+                .IsRowVersion();
+
             // Configuration for Color
             modelBuilder.Entity<Color>()
                 .HasOne(c => c.Product)
