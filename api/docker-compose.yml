@@ -9,7 +9,7 @@ services:
       - "8081:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=localhost,1433;Database=dbdemo;User Id=sa;Password=Password123;
+      - ConnectionStrings__DefaultConnection=Server=utc2-adminecommercesystem-netcore.onrender.com,1433;Database=dbdemo;User Id=sa;Password=Password123;
 
   sql_server:
     image: mcr.microsoft.com/mssql/server
