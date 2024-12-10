@@ -48,6 +48,7 @@ namespace api.Controllers
         [HttpGet("category/{cateId}")]
         public async Task<ActionResult<List<ProductDTO>>> GetProductsByCategory(Guid cateId)
         {
+            Console.WriteLine("Category ID: " + cateId);
             var products = await _productService.GetProductsByCategoryAsync(cateId);
             if (products == null)
             {

@@ -9,11 +9,42 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(option =>
+{
+    option.SwaggerDoc("v1", new OpenApiInfo { Title = "Demo API", Version = "v1" });
+    option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Please enter a valid token",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        Scheme = "Bearer"
+    });
+    option.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type=ReferenceType.SecurityScheme,
+                    Id="Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 // Configure Entity Framework and Identity
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -81,13 +112,15 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowReactApp",
          builder =>
          {
-             builder.WithOrigins("http://localhost:3000") // Replace with your React app's URL
+             builder.WithOrigins("http://localhost:3000")
+                    .WithOrigins("http://localhost:3001")
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials()
                     .WithHeaders("Authorization"); // Allow Authorization header
          });
 });
+
 
 // Register services
 builder.Services.AddHttpClient();
@@ -129,7 +162,19 @@ if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
     app.UseCors("AllowReactApp");
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
+
+
+app.UseHttpsRedirection();
+
+app.UseCors(x => x
+    .AllowAnyMethod()
+    .AllowAnyHeader()
+    .AllowCredentials()
+    .SetIsOriginAllowed(origin => true));
+
 
 // Custom headers for COOP and COEP
 app.Use(async (context, next) =>

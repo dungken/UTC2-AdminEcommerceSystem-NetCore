@@ -36,6 +36,7 @@ namespace api.Services
                 .Include(p => p.Discounts)
                 .ToListAsync();
 
+
             return products.Select(p => new ProductDTO
             {
                 Id = p.Id,
@@ -215,27 +216,27 @@ namespace api.Services
                 {
                     // Fetch the product from the database based on the ID, including RowVersion for concurrency control
                     var product = await _context.Products
-                        .Include(p => p.Colors)  // Including related colors
-                        .Include(p => p.Sizes)   // Including related sizes
-                        .Include(p => p.Images)  // Including related images
+                        // .Include(p => p.Colors)  // Including related colors
+                        // .Include(p => p.Sizes)   // Including related sizes
+                        // .Include(p => p.Images)  // Including related images
                         .FirstOrDefaultAsync(p => p.Id == productDto.Id);
 
-                    _logger.LogInformation($"Updating product with ID {productDto.Id}");
-                    _logger.LogInformation($"Row Version Product: {BitConverter.ToString(product.RowVersion)}");
-                    _logger.LogInformation($"Row Version Product DTO: {BitConverter.ToString(productDto.RowVersion)}");
+                    // _logger.LogInformation($"Updating product with ID {productDto.Id}");
+                    // _logger.LogInformation($"Row Version Product: {BitConverter.ToString(product.RowVersion)}");
+                    // _logger.LogInformation($"Row Version Product DTO: {BitConverter.ToString(productDto.RowVersion)}");
 
                     if (product == null)
                         throw new KeyNotFoundException($"Product with ID {productDto.Id} not found.");
 
-                    // Compare the RowVersion from the database with the one sent by the client
-                    if (!product.RowVersion.SequenceEqual(productDto.RowVersion))
-                    {
-                        // If RowVersion doesn't match, throw concurrency exception
-                        throw new DbUpdateConcurrencyException("The product has been modified by another user.");
-                    }
+                    // // Compare the RowVersion from the database with the one sent by the client
+                    // if (!product.RowVersion.SequenceEqual(productDto.RowVersion))
+                    // {
+                    //     // If RowVersion doesn't match, throw concurrency exception
+                    //     throw new DbUpdateConcurrencyException("The product has been modified by another user.");
+                    // }
 
 
-                    _logger.LogInformation("Updating product properties...");
+                    // _logger.LogInformation("Updating product properties...");
 
 
                     // Update product properties
@@ -248,13 +249,13 @@ namespace api.Services
                     product.UpdatedAt = DateTime.UtcNow;
 
                     // Update Colors (assuming ColorDTO contains color details)
-                    UpdateProductColors(product, productDto.Colors);
+                    // UpdateProductColors(product, productDto.Colors);
 
-                    // Update Sizes (assuming SizeDTO contains size details)
-                    UpdateProductSizes(product, productDto.Sizes);
+                    // // Update Sizes (assuming SizeDTO contains size details)
+                    // UpdateProductSizes(product, productDto.Sizes);
 
-                    // Update Images (assuming ImageDTO contains image URLs or paths)
-                    UpdateProductImages(product, productDto.Images);
+                    // // Update Images (assuming ImageDTO contains image URLs or paths)
+                    // UpdateProductImages(product, productDto.Images);
 
                     // Save changes to the database, this will automatically check the RowVersion
                     await _context.SaveChangesAsync();
@@ -361,6 +362,7 @@ namespace api.Services
 
         public async Task<List<ProductDTO>> GetProductsByCategoryAsync(Guid cateId)
         {
+            Console.WriteLine("Category ID: " + cateId);
             try
             {
                 // Get the products for the given categoryId
@@ -369,8 +371,8 @@ namespace api.Services
                     .Include(p => p.Colors) // Include related Colors
                     .Include(p => p.Sizes) // Include related Sizes
                     .Include(p => p.Images) // Include related Images
-                    .Include(p => p.Discounts) // Include related Discounts
-                    .Include(p => p.Feedbacks) // Include related Feedbacks
+                                            // .Include(p => p.Discounts) // Include related Discounts
+                                            // .Include(p => p.Feedbacks) // Include related Feedbacks
                     .ToListAsync();
 
                 // Map the products to ProductDTO
@@ -406,23 +408,23 @@ namespace api.Services
                         Url = i.Url,
                         AltText = i.AltText
                     }).ToList(),
-                    Discounts = product.Discounts.Select(d => new DiscountDto
-                    {
-                        // Assuming DiscountDto has relevant properties
-                        Id = d.Id,
-                        Percentage = d.Percentage,
-                        Name = d.Name,
-                        StartDate = d.StartDate,
-                        EndDate = d.EndDate
+                    // Discounts = product.Discounts.Select(d => new DiscountDto
+                    // {
+                    //     // Assuming DiscountDto has relevant properties
+                    //     Id = d.Id,
+                    //     Percentage = d.Percentage,
+                    //     Name = d.Name,
+                    //     StartDate = d.StartDate,
+                    //     EndDate = d.EndDate
 
-                    }).ToList(),
-                    Feedbacks = product.Feedbacks.Select(f => new FeedbackDTO
-                    {
-                        // Assuming FeedbackDTO has relevant properties
-                        Id = f.Id,
-                        Comment = f.Comment,
-                        Rating = f.Rating
-                    }).ToList()
+                    // }).ToList(),
+                    // Feedbacks = product.Feedbacks.Select(f => new FeedbackDTO
+                    // {
+                    //     // Assuming FeedbackDTO has relevant properties
+                    //     Id = f.Id,
+                    //     Comment = f.Comment,
+                    //     Rating = f.Rating
+                    // }).ToList()
                 }).ToList();
 
                 return productDtos;

@@ -10,7 +10,9 @@ namespace api.Services
     {
         Task<OrderDto> CreateOrderAsync(CreateOrderDto dto);
         Task<OrderDto> GetOrderByIdAsync(Guid orderId);
+        Task<IEnumerable<OrderDto>> GetAllOrdersByUserIdAsync(Guid userId);
         Task<IEnumerable<OrderDto>> GetAllOrdersAsync();
         Task<bool> UpdateOrderStatusAsync(Guid orderId, string status);
+        Task<bool> AddToCartAsync(Guid orderId, List<CartItemDto> cartItems);
     }
 }

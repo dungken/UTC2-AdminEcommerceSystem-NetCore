@@ -61,10 +61,10 @@ namespace api.Controllers
                 return BadRequest(_baseResponseService.CreateErrorResponse<object>("No files uploaded."));
             }
 
-            if (files.Any(file => file.Length > 5 * 1024 * 1024))
-            {
-                return BadRequest(_baseResponseService.CreateErrorResponse<object>("One or more files exceed the size limit."));
-            }
+            // if (files.Any(file => file.Length > 5 * 1024 * 1024))
+            // {
+            //     return BadRequest(_baseResponseService.CreateErrorResponse<object>("One or more files exceed the size limit."));
+            // }
 
             if (files.Any(file => !file.ContentType.StartsWith("image/")))
             {

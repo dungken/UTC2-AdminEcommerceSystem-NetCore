@@ -17,5 +17,10 @@ namespace api.Models
         // Navigation Properties
         public ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
         public Payment Payment { get; set; }
+
+
+        // Foreign Keys
+        public Guid UserId { get; set; }
+        public User User { get; set; }
     }
 }

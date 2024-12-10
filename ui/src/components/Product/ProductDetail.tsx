@@ -124,6 +124,7 @@ const ProductDetail = () => {
   const { productId } = useParams<{ productId: string }>(); // Get productId from URL
   const [product, setProduct] = useState<any | null>(null);
 
+
   useEffect(() => {
     // Fetch the product details using productId
     const fetchProduct = async () => {
@@ -150,6 +151,8 @@ const ProductDetail = () => {
     style: 'currency',
     currency: 'VND',
   }).format(product.price);
+
+
 
   return (
     <Container>

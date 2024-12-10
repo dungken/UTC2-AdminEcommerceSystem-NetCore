@@ -25,6 +25,9 @@ const ProductList = () => {
     fetchProducts();
   }, []);
 
+  console.log(products);
+
+
   const handleShowMore = () => {
     setVisibleCount((prevCount) => prevCount + 6); // Show 6 more products on click
   };

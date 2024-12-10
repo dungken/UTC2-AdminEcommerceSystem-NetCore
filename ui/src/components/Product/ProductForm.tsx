@@ -63,6 +63,8 @@ const ProductForm: React.FC = () => {
             const productId = productIdParam;
             // Call the upload service
             const response = await UploadMultipleFileService(files, productId, altText);
+            console.log('Upload response:', response);
+
             // Handle the response
             toast.success('Files uploaded successfully!');
         } catch (error) {
@@ -95,6 +97,18 @@ const ProductForm: React.FC = () => {
                 toast.success('Product added successfully');
                 // Handle upload images to cloudinary
                 handleSaveImages(response.data.product.id);
+                // Reset the form
+                setName('');
+                setDescription('');
+                setPrice(0);
+                setInventory(0);
+                setDiscount(0);
+                setCategoryId('');
+                setSelectedColors([]);
+                setSelectedSizes([]);
+                setSelectedImages([]);
+                setStatus('Active');
+
             } else {
                 toast.error('Error adding product');
                 console.error('Error adding product:', response.message);
