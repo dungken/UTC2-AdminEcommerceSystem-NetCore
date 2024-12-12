@@ -133,33 +133,10 @@ const Sidebar: React.FC = () => {
                             </ul>
                         )}
                     </li>
-                    <li className={`menu-item ${openMenu === 'discount' ? 'open' : ''}`}>
-                        <Link to="/discount" className="menu-link menu-toggle" onClick={() => toggleMenu('discount')}>
-                            <i className="menu-icon tf-icons bx bx-layout"></i>
-                            <div className="text-truncate" data-i18n="Layouts">Discount</div>
-                        </Link>
-                    </li>
-                    <li className={`menu-item ${openMenu === 'payment' ? 'open' : ''}`}>
-                        <Link to="/payment" className="menu-link menu-toggle" onClick={() => toggleMenu('payment')}>
-                            <i className="menu-icon tf-icons bx bx-layout"></i>
-                            <div className="text-truncate" data-i18n="Layouts">Payment</div>
-                        </Link>
-                    </li>
                     <li className={`menu-item ${openMenu === 'order' ? 'open' : ''}`}>
                         <Link to="/order" className="menu-link menu-toggle" onClick={() => toggleMenu('order')}>
                             <i className="menu-icon tf-icons bx bx-layout"></i>
                             <div className="text-truncate" data-i18n="Layouts">Orders</div>
-                        </Link>
-                    </li>
-
-                    {/* <!-- SUPPORT & FEEDBACK MANAGEMENT --> */}
-                    <li className="menu-header small text-uppercase">
-                        <span className="menu-header-text">SUPPORT & FEEDBACK</span>
-                    </li>
-                    <li className={`menu-item ${openMenu === 'support' ? 'open' : ''}`}>
-                        <Link to="/support" className="menu-link menu-toggle" onClick={() => toggleMenu('support')}>
-                            <i className="menu-icon tf-icons bx bx-layout"></i>
-                            <div className="text-truncate" data-i18n="Layouts">Support</div>
                         </Link>
                     </li>
                 </ul>

@@ -1,13 +1,16 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Line, Bar } from "react-chartjs-2";
 import "chart.js/auto";
+import { GetOrdersService } from "../../services/OrderService";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import autoTable from 'jspdf-autotable';
 
 function Dashboard() {
     return (
         <div className="container mt-5">
             <h2 className="text-center mb-5">Dashboard Overview</h2>
 
-            {/* Row 1: Revenue and Orders */}
             <div className="row mb-4">
                 <div className="col-md-6 mb-4">
                     <RevenueCard />
@@ -16,116 +19,166 @@ function Dashboard() {
                     <OrdersCard />
                 </div>
             </div>
-
-            {/* Row 2: Customers and Inventory */}
-            <div className="row mb-4">
-                <div className="col-md-6 mb-4">
-                    <CustomersCard />
-                </div>
-                <div className="col-md-6 mb-4">
-                    <InventoryCard />
-                </div>
-            </div>
-
-            {/* Row 3: Performance Analysis */}
-            <div className="row">
-                <div className="col-md-12">
-                    <PerformanceAnalysis />
-                </div>
-            </div>
         </div>
     );
 }
 
 function RevenueCard() {
+    const [orders, setOrders] = useState({ data: [] });
+    // Call the API to fetch orders
+    useEffect(() => {
+        const fetchOrders = async () => {
+            try {
+                const response = await GetOrdersService();
+                if (response.success) {
+                    setOrders({ data: response.data });
+                }
+            } catch (error) {
+                console.log("Error fetching orders: ", error);
+            }
+        };
+        fetchOrders();
+    }, []);
+
+    console.log(orders);
+
+
+    const completedOrders = orders.data.filter((order: { status: string }) => order.status === "Completed");
+
+    const ordersByMonth = completedOrders.reduce((acc: { [key: number]: { orderDate: string; totalAmount: number }[] }, order: { orderDate: string; totalAmount: number }) => {
+        const month = new Date(order.orderDate).getMonth() + 1;
+        acc[month] = acc[month] || [];
+        acc[month].push(order);
+        return acc;
+    }, {});
+
+    const monthsWithOrders = Object.keys(ordersByMonth).filter(month => ordersByMonth[Number(month)].length > 0);
+
+    const monthlyRevenue = monthsWithOrders.map(month => {
+        const totalRevenue = ordersByMonth[Number(month)].reduce((acc: number, order) => acc + order.totalAmount, 0);
+        return totalRevenue;
+    });
+
+    const labels = monthsWithOrders.map(month => {
+        const date = new Date(2024, Number(month) - 1, 1);
+        return date.toLocaleString('default', { month: 'short' });
+    });
+
     const data = {
-        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-        datasets: [
-            {
-                label: "Revenue",
-                data: [12000, 19000, 30000, 50000, 45000, 60000],
-                backgroundColor: "rgba(75, 192, 192, 0.2)",
-                borderColor: "rgba(75, 192, 192, 1)",
-                borderWidth: 2,
-                tension: 0.3,
-            },
-        ],
+        labels,
+        datasets: [{
+            label: "Revenue",
+            data: monthlyRevenue,
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1
+        }]
     };
+
+    const exportRevenueReport = () => {
+        const pdf = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
+
+        pdf.text("Revenue Report", pdf.internal.pageSize.getWidth() / 2, 20);
+
+        autoTable(pdf, {
+            head: [['Month', 'Revenue']],
+            body: data.labels.map((label, index) => [label, data.datasets[0].data[index]]),
+            startY: 40,
+        });
+
+        pdf.save('revenue_report.pdf');
+    };
+
 
     return (
         <div className="card shadow-sm p-4">
             <h5 className="card-title">Revenue Overview</h5>
             <Line data={data} />
+            <button className="btn btn-sm btn-primary m-4" onClick={exportRevenueReport}>Export Report</button>
         </div>
     );
 }
 
+
+
 function OrdersCard() {
-    const data = {
-        labels: ["Pending", "Processing", "Shipped", "Delivered"],
+    const [ordersData, setOrdersData] = useState({
+        labels: ["Pending", "Processing", "Cancelled", "Completed"],
         datasets: [
             {
-                label: "Orders",
-                data: [300, 450, 150, 500],
-                backgroundColor: ["#ff6384", "#36a2eb", "#cc65fe", "#ffce56"],
-            },
-        ],
+                label: "Number of Orders",
+                data: [0, 0, 0, 0],
+                backgroundColor: ["#ffce56", "#36a2eb", "#ff6384", "#4caf50"],
+                borderColor: ['#ffce56', '#36a2eb', '#ff6384', '#4caf50'],
+                borderWidth: 1
+            }
+        ]
+    });
+    // Call the API to fetch orders
+    useEffect(() => {
+        const fetchOrders = async () => {
+            try {
+                const response = await GetOrdersService();
+                if (response.success) {
+                    const orderStatusCounts = {
+                        Pending: 0,
+                        Processing: 0,
+                        Cancelled: 0,
+                        Completed: 0,
+                    };
+
+                    for (const order of response.data as { status: 'Pending' | 'Processing' | 'Cancelled' | 'Completed' }[]) {
+                        orderStatusCounts[order.status] += 1;
+                    }
+
+                    const updatedData = {
+                        ...ordersData,
+                        datasets: [
+                            {
+                                ...ordersData.datasets[0],
+                                data: [
+                                    orderStatusCounts.Pending,
+                                    orderStatusCounts.Processing,
+                                    orderStatusCounts.Cancelled,
+                                    orderStatusCounts.Completed,
+                                ],
+                            },
+                        ],
+                    };
+
+                    setOrdersData(updatedData);
+                }
+            } catch (error) {
+                console.log("Error fetching orders: ", error);
+            }
+        };
+        fetchOrders();
+    }, []);
+
+    const exportOrdersReport = () => {
+        const pdf = new jsPDF();
+
+        pdf.text("Orders Report", pdf.internal.pageSize.getWidth() / 2, 20);
+
+        autoTable(pdf, {
+            head: [['Status', 'Number of Orders']],
+            body: ordersData.labels.map((label, index) => [label, ordersData.datasets[0].data[index]]),
+            startY: 40
+        });
+
+        pdf.save('orders_report.pdf');
     };
+
 
     return (
         <div className="card shadow-sm p-4">
             <h5 className="card-title">Order Status Overview</h5>
-            <Bar data={data} />
+            <Bar data={ordersData} />
+            <button className="btn btn-sm btn-primary m-4" onClick={exportOrdersReport}>Export Report</button>
         </div>
     );
 }
 
-function CustomersCard() {
-    return (
-        <div className="card shadow-sm p-4">
-            <h5 className="card-title">Customer Metrics</h5>
-            <ul className="list-group list-group-flush">
-                <li className="list-group-item d-flex justify-content-between align-items-center">
-                    New Customers <span className="badge bg-primary rounded-pill">120</span>
-                </li>
-                <li className="list-group-item d-flex justify-content-between align-items-center">
-                    Active Customers <span className="badge bg-success rounded-pill">850</span>
-                </li>
-                <li className="list-group-item d-flex justify-content-between align-items-center">
-                    Total Customers <span className="badge bg-info rounded-pill">2500</span>
-                </li>
-            </ul>
-        </div>
-    );
-}
-
-function InventoryCard() {
-    return (
-        <div className="card shadow-sm p-4">
-            <h5 className="card-title">Inventory Summary</h5>
-            <ul className="list-group list-group-flush">
-                <li className="list-group-item d-flex justify-content-between align-items-center">
-                    Total Stock <span className="badge bg-info rounded-pill">1200</span>
-                </li>
-                <li className="list-group-item d-flex justify-content-between align-items-center">
-                    Low Stock Alerts <span className="badge bg-danger rounded-pill">30</span>
-                </li>
-                <li className="list-group-item d-flex justify-content-between align-items-center">
-                    Out of Stock <span className="badge bg-warning rounded-pill">15</span>
-                </li>
-            </ul>
-        </div>
-    );
-}
-
-function PerformanceAnalysis() {
-    return (
-        <div className="card shadow-sm p-4">
-            <h5 className="card-title">Performance Analysis</h5>
-            <p>Revenue and order analysis will be displayed here...</p>
-            {/* Additional charts or data can go here */}
-        </div>
-    );
-}
 
 export default Dashboard;
+
