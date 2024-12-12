@@ -149,19 +149,36 @@ namespace api.Controllers
         }
 
         [HttpPatch("{id}/status")]
-        public async Task<IActionResult> UpdateOrderStatus(Guid id, [FromBody] string status)
+        public async Task<IActionResult> UpdateOrderStatus(Guid id, [FromBody] UpdateStatusDto updateStatusDto)
         {
             if (id == Guid.Empty)
             {
                 return BadRequest(_baseResponseService.CreateErrorResponse<object>("Invalid order ID."));
             }
-            if (string.IsNullOrEmpty(status))
+            if (string.IsNullOrEmpty(updateStatusDto.Status))
             {
                 return BadRequest(_baseResponseService.CreateErrorResponse<object>("Invalid status."));
             }
 
-            await _orderService.UpdateOrderStatusAsync(id, status);
-            return NoContent();
+            await _orderService.UpdateOrderStatusAsync(id, updateStatusDto.Status);
+            return Ok(_baseResponseService.CreateSuccessResponse<object>(null, "Order status updated."));
+        }
+
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteOrder(Guid id)
+        {
+            if (id == Guid.Empty)
+            {
+                return BadRequest(_baseResponseService.CreateErrorResponse<object>("Invalid order ID."));
+            }
+
+            var result = await _orderService.DeleteOrderAsync(id);
+            if (!result)
+            {
+                return NotFound(_baseResponseService.CreateErrorResponse<object>("Order not found."));
+            }
+            return Ok(_baseResponseService.CreateSuccessResponse<object>(null, "Order deleted."));
         }
 
     }

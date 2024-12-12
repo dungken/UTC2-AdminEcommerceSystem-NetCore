@@ -63,7 +63,6 @@ namespace api.Services
         {
             var order = await _context.Orders
                 .Include(o => o.OrderDetails)
-                .Include(o => o.Payment)
                 .FirstOrDefaultAsync(o => o.Id == orderId);
 
             if (order == null) throw new KeyNotFoundException("Order not found");
@@ -74,6 +73,7 @@ namespace api.Services
                 OrderDate = order.OrderDate,
                 Status = order.Status,
                 TotalAmount = order.TotalAmount,
+                UserId = order.UserId,
                 OrderDetails = order.OrderDetails.Select(detail => new OrderDetailDto
                 {
                     Id = detail.Id,
@@ -82,14 +82,7 @@ namespace api.Services
                     UnitPrice = detail.UnitPrice,
                     DiscountAmount = detail.DiscountAmount,
                     Total = detail.Total
-                }).ToList(),
-                Payment = order.Payment == null ? null : new PaymentDto
-                {
-                    Id = order.Payment.Id,
-                    Amount = order.Payment.Amount,
-                    PaymentMethod = order.Payment.PaymentMethod,
-                    PaymentDate = order.Payment.PaymentDate
-                }
+                }).ToList()
             };
         }
 
@@ -98,6 +91,7 @@ namespace api.Services
             var orders = await _context.Orders
                 .Include(o => o.OrderDetails)
                 .Include(o => o.Payment)
+                .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
 
             return orders.Select(order => new OrderDto
@@ -106,6 +100,7 @@ namespace api.Services
                 OrderDate = order.OrderDate,
                 Status = order.Status,
                 TotalAmount = order.TotalAmount,
+                UserId = order.UserId,
                 OrderDetails = order.OrderDetails.Select(detail => new OrderDetailDto
                 {
                     Id = detail.Id,
@@ -186,6 +181,16 @@ namespace api.Services
                     Total = detail.Total
                 }).ToList()
             });
+        }
+
+        public async Task<bool> DeleteOrderAsync(Guid orderId)
+        {
+            var order = await _context.Orders.FindAsync(orderId);
+            if (order == null) throw new KeyNotFoundException("Order not found");
+
+            _context.Orders.Remove(order);
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 

@@ -100,15 +100,10 @@ const UserModal: React.FC = () => {
                 status: user.status
             }
 
-            // console.log("User data is: ", userData);
+            console.log('User data:', userData);
+
 
             const response = await CreateUserService(userData);
-            // console.log("Response: ", response);
-
-            // console.log("User profile picture: ", user.profilePicture);
-            // console.log("User username: ", user.username);
-
-
 
             const urlUploadResponse = await UploadSingleFileToCloud(user.profilePicture as File, user.username as string);
 

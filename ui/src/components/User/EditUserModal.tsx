@@ -12,11 +12,12 @@ import User from '../../models/User';
 
 interface EditUserModalProps {
     editUser: User;
+    backdrop: string;
     onClose: () => void; // Callback to close the modal
     onUpdateSuccess: () => void; // Callback after successful update
 }
 
-const EditUserModal: React.FC<EditUserModalProps> = ({ editUser, onClose, onUpdateSuccess }) => {
+const EditUserModal: React.FC<EditUserModalProps> = ({ editUser, onClose, onUpdateSuccess, backdrop }) => {
     console.log("Edit User Modal:", editUser);
 
     const [provinces, setProvinces] = useState<any[]>([]);
@@ -122,6 +123,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ editUser, onClose, onUpda
             await UpdateUserService(userUpdate);
             onUpdateSuccess(); // Notify parent of successful update
             onClose(); // Close modal
+            // Reload the page
+            window.location.reload();
         } catch (error) {
             console.error('Error updating user:', error);
         }
@@ -151,7 +154,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ editUser, onClose, onUpda
     const roleList = Array.from(roles);
 
     return (
-        <div className="modal fade" id="editUserModel" tabIndex={-1} aria-labelledby="editUserModelLabel" aria-hidden="true">
+        <div className={`modal ${backdrop} fade`} id="editUserModel" tabIndex={-1} aria-labelledby="editUserModelLabel" aria-hidden="true">
             <div className="modal-dialog modal-lg modal-dialog-centered">
                 <div className="modal-content">
                     <div className="modal-header justify-content-center">

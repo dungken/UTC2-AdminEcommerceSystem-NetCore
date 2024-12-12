@@ -14,5 +14,6 @@ namespace api.Services
         Task<IEnumerable<OrderDto>> GetAllOrdersAsync();
         Task<bool> UpdateOrderStatusAsync(Guid orderId, string status);
         Task<bool> AddToCartAsync(Guid orderId, List<CartItemDto> cartItems);
+        Task<bool> DeleteOrderAsync(Guid orderId);
     }
 }

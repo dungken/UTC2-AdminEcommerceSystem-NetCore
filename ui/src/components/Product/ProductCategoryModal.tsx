@@ -74,6 +74,8 @@ const ProductCategoryModal: React.FC<{ category: any, onSubmit: (category: any) 
         };
         onSubmit(newCategory);
         onClose(); // Close the modal using the onClose prop
+        // Reload page
+        window.location.reload();
     };
 
     return (

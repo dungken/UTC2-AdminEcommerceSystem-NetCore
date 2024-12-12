@@ -48,6 +48,8 @@ import InventoryManagement from './components/Product/InventoryManagement';
 import OrderManagementPage from './components/Order/OrderManagementPage';
 import ProductDetail from './components/Product/ProductDetail';
 import ProductFormEdit from './components/Product/ProductFormEdit';
+import OrderDetail from './components/Order/OrderDetail';
+import UserInfo from './components/UserProfile/UserInfo';
 
 const App: React.FC = () => {
   return (
@@ -98,11 +100,11 @@ const App: React.FC = () => {
                           <Route path="/discount" element={<ProtectedRoute><DiscountCodeManagement /></ProtectedRoute>} />
                           <Route path="/inventory" element={<ProtectedRoute><InventoryManagement /></ProtectedRoute>} />
 
-                          {/* SUPPORT */}
                           <Route path="/support" element={<ProtectedRoute><SupportChat /></ProtectedRoute>} />
 
-                          {/* SUPPORT */}
                           <Route path="/order" element={<ProtectedRoute><OrderManagementPage /></ProtectedRoute>} />
+                          <Route path="/order/:orderId" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
+                          <Route path="/customer/:userId" element={<ProtectedRoute><UserInfo /></ProtectedRoute>} />
                           {/* Add other routes here */}
                         </Routes>
                       </div>

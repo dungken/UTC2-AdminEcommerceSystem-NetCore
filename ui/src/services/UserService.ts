@@ -99,6 +99,17 @@ export const GetAllUserService = async (page: number, pageSize: number) => {
     }
 };
 
+export const GetUserByIdService = async (id: string) => {
+    try {
+        const response = await axios.get(`/User/Get/${id}`);
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            return error.response.data;
+        }
+    }
+};
+
 export const UpdateUserService = async (user: any) => {
     console.log("User in User Service:", user);
 
@@ -117,4 +128,5 @@ export const UpdateUserService = async (user: any) => {
         throw error;
     }
 };
+
 

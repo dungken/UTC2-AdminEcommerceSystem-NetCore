@@ -1,58 +1,66 @@
-import React, { useState } from 'react';
-import { Container, Button, Row, Col } from 'react-bootstrap';
-import OrderForm from './OrderForm';
+import React, { useState, useEffect } from 'react';
+import { Container, Row, Col } from 'react-bootstrap';
 import OrderList from './OrderList';
-import PaymentManagement from './PaymentManagement';
-import OrderReport from './OrderReport';
 import { Order } from './types';
+import axios from 'axios'; // Axios for API requests (optional, you can use fetch)
+import { DeleteOrderByIdService, GetOrdersService } from '../../services/OrderService';
+import { toast } from 'react-toastify';
 
 const OrderManagementPage: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [editingOrder, setEditingOrder] = useState<Order | undefined>(undefined);
+    const [loading, setLoading] = useState(false);
 
-    const handleSaveOrder = (order: Order) => {
-        if (editingOrder) {
-            setOrders(orders.map((o) => (o.id === order.id ? order : o)));
-        } else {
-            setOrders([...orders, order]);
+    // Function to fetch orders from the API
+    const fetchOrders = async () => {
+        setLoading(true); // Set loading to true while fetching data
+        try {
+            const response = await GetOrdersService();
+            if (response.success) {
+                setOrders(response.data);
+            } else {
+                console.log(response.message || 'Failed to fetch orders');
+            }
+        } catch (err: any) {
+            console.log(err.message || 'Failed to fetch orders');
+        } finally {
+            setLoading(false); // Stop loading
         }
-        setEditingOrder(undefined); // Reset editing state after saving
+    };
+
+    useEffect(() => {
+        fetchOrders();
+    }, []);
+
+    const handleDeleteOrder = async (orderId: string) => {
+        // Call API to delete the order
+        try {
+            const response = await DeleteOrderByIdService(orderId);
+            if (response.success) {
+                toast.success('Order deleted successfully');
+                setOrders(orders.filter((order) => order.id !== orderId));
+            } else {
+                toast.error(response.message || 'Failed to delete order');
+            }
+        } catch (err: any) {
+            toast.error(err.message || 'Failed to fetch orders');
+        }
     };
 
     const handleEditOrder = (order: Order) => {
         setEditingOrder(order);
-    };
-
-    const handleDeleteOrder = (orderId: string) => {
-        setOrders(orders.filter((order) => order.id !== orderId));
-    };
-
-    const handleProcessPayment = (payment: any) => {
-        // Process payment logic, could be an API call here
-        console.log('Processing payment:', payment);
-    };
+    }
 
     return (
         <Container>
-            <h1>Order Management</h1>
+            {loading && <p>Loading orders...</p>}
             <Row>
-                <Col md={6}>
-                    <OrderForm onSave={handleSaveOrder} order={editingOrder} />
-                </Col>
-                <Col md={6}>
+                <Col md={12}>
                     <OrderList
                         orders={orders}
-                        onEdit={handleEditOrder}
                         onDelete={handleDeleteOrder}
+                        onEdit={handleEditOrder}
                     />
-                </Col>
-            </Row>
-            <Row className="mt-4">
-                <Col md={6}>
-                    <PaymentManagement onProcessPayment={handleProcessPayment} />
-                </Col>
-                <Col md={6}>
-                    <OrderReport orders={orders} />
                 </Col>
             </Row>
         </Container>

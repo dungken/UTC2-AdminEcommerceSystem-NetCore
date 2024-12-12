@@ -7,9 +7,7 @@ import { DeleteAccountService, DeleteUsersService, GetAllUserService, RestoreUse
 import { toast } from 'react-toastify';
 import moment from 'moment';
 import Pagination from '../../utils/Pagination';
-import ConfirmationModal from './ConfirmationModal';
 import EditUserModal from './EditUserModal';
-
 
 const UserList: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -171,6 +169,13 @@ const UserList: React.FC = () => {
         console.log("Edit User:", user);
 
         setEditUser(user);
+    }
+
+    console.log("User: ", users);
+
+
+    const handleCloseModal = () => {
+        setEditUser(null);
     }
 
     return (
@@ -362,14 +367,32 @@ const UserList: React.FC = () => {
                                         </td>
 
 
-                                        <button className="btn btn-primary rounded" data-bs-toggle="modal" data-bs-target="#editUserModel" onClick={() => handleEditUser(user)}>
+                                        <button
+                                            className="btn btn-primary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editUserModel"
+                                            onClick={() => handleEditUser(user)}
+                                            style={{
+                                                marginTop: '10px',
+                                                border: 'none',
+                                                padding: '6px 8px'
+                                            }}
+                                        >
                                             <i className="bi bi-pencil-square"></i>
                                         </button>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                        {editUser && <EditUserModal editUser={editUser} onClose={() => setEditUser(null)} onUpdateSuccess={() => fetchData(currentPage, pageSize)} />}
+
+                        {editUser && (
+                            <EditUserModal
+                                editUser={editUser}
+                                backdrop="static"
+                                onClose={handleCloseModal}
+                                onUpdateSuccess={() => fetchData(currentPage, pageSize)}
+                            />
+                        )}
 
                         <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
                     </div>
